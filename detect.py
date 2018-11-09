@@ -4,6 +4,8 @@
 Created on Thu Nov  8 10:03:52 2018
 
 @author: mayanasr
+
+Source of the code: https://www.pyimagesearch.com/2015/11/09/pedestrian-detection-opencv/
 """
 
 # import the necessary packages
