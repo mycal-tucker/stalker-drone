@@ -39,13 +39,16 @@ class CinematicController:
     # Future iterations could keep the information about all the bounding boxes to allow for
     # tracking multiple people, or guaranteeing that we don't run into other people as we track
     # just one person.
-    # TODO: what if there are no bounding boxes?
+    # If the input is degenerate (None or empty), updates the latest and smooth bounding box to None,
+    # and rely on the waypoint generator to do something intelligent as a result.
     def update_latest_bbs(self, all_bounding_boxes):
         if all_bounding_boxes is None or len(all_bounding_boxes) == 0:
             print("Error, no bounding boxes provided. This case is not handled.")
             print("For now, assume that the bounding box just disappeared, so don't change the tracked"
                   " bounding box at all. Other valid approaches would be to set the latest value to"
                   " null but not update teh smoothed bounding box.")
+            self.latest_bounding_box = None
+            self.smoothed_bounding_box = None
             return
         best_match_bb = self.identify_best_bb_match(all_bounding_boxes)
         self.latest_bounding_box = best_match_bb

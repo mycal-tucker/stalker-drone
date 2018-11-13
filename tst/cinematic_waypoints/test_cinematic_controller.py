@@ -228,6 +228,44 @@ class TestCinematicController(unittest.TestCase):
         assert waypoint.get_position()[2] < 0  # Fly down.
         assert waypoint.get_attitude() == (0, 0, 0)
 
+    # Test that, on startup, if no bounding box is given to the drone, it just hovers.
+    def test_hover_if_no_bb_at_start(self):
+        self.cinematic_controller.update_latest_bbs(None)
+        # Check that smoothed and latest have been updated to be None
+        latest_bb = self.cinematic_controller.latest_bounding_box
+        smoothed_bb = self.cinematic_controller.smoothed_bounding_box
+        assert latest_bb is None
+        assert smoothed_bb is None
+        self.cinematic_controller.update_latest_drone_state(origin_drone_state)
+        self.cinematic_controller.set_waypoint_generator(FixedBBWaypointGenerator())
+
+        # Now check that the drone is told to stay in place.
+        waypoints = self.cinematic_controller.generate_waypoints()
+        assert len(waypoints) == 1
+        waypoint = waypoints[0]
+        assert waypoint == origin_drone_state
+
+    # Test that, after the the drone has seen a bounding box, if the bounding box disappears, the drone
+    # stops and hovers.
+    def test_hover_if_no_bb_in_the_middle(self):
+        self.cinematic_controller.update_latest_bbs([bb_10_10_0_0])
+        self.cinematic_controller.update_latest_drone_state(origin_drone_state)
+        self.cinematic_controller.set_waypoint_generator(FixedBBWaypointGenerator())
+
+        # Check that the drone should start flying somewhere
+        waypoints = self.cinematic_controller.generate_waypoints()
+        assert len(waypoints) == 1
+        waypoint = waypoints[0]
+        assert waypoint != origin_drone_state
+
+        # Now send in no bounding boxes
+        self.cinematic_controller.update_latest_bbs(None)
+        # Now check that the drone is told to stay in place.
+        waypoints = self.cinematic_controller.generate_waypoints()
+        assert len(waypoints) == 1
+        waypoint = waypoints[0]
+        assert waypoint == origin_drone_state
+
 
 if __name__ == '__main__':
     unittest.main()
