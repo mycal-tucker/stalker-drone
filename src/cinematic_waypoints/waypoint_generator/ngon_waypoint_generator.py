@@ -27,11 +27,12 @@ class NGonWaypointGenerator(WaypointGenerator):
 
         target_waypoints = []
         angle_per_segment = 2.0 * math.pi / self.n
-        for i in range(1, self.n):  # Don't include current state as a waypoint
+        for i in range(1, self.n):  # Don't include current state as a starting waypoint
             new_x = math.cos(angle_per_segment * i + math.pi + current_yaw) * self.radius + center_x
             new_y = math.sin(angle_per_segment * i + math.pi + current_yaw) * self.radius + center_y
             new_theta = current_yaw + i * angle_per_segment  # Check if need to crop to be within [-2pi, 2pi]
             target_waypoints.append(DroneState(new_x, new_y, current_z,
                                                current_roll, current_pitch, new_theta,
                                                0, 0, 0, 0, 0, 0))  # All velocities are 0
+        target_waypoints.append(drone_state)  # end up back where you started.
         return target_waypoints

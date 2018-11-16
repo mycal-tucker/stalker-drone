@@ -1,6 +1,7 @@
 import unittest
 from cinematic_waypoints.cinematic_controller import CinematicController
 from cinematic_waypoints.waypoint_generator.fixed_bb_waypoint_generator import FixedBBWaypointGenerator
+from cinematic_waypoints.waypoint_generator.yaw_waypoint_generator import YawWaypointGenerator
 from cinematic_waypoints.waypoint_generator.ngon_waypoint_generator import NGonWaypointGenerator
 from utils.bounding_box import BoundingBox
 from utils.drone_state import DroneState
@@ -275,17 +276,19 @@ class TestCinematicController(unittest.TestCase):
 
         # Now ask for waypoints, which should describe a square around the point (1, 0)
         waypoints = self.cinematic_controller.generate_waypoints()
-        assert len(waypoints) == 3  # 3 points, not 4, because we don't want the current state as a waypoint
-        waypoint1, waypoint2, waypoint3 = waypoints
+        assert len(waypoints) == 4  # 4 points
+        waypoint1, waypoint2, waypoint3, waypoint4 = waypoints
         # Check that the positions are correct
         assert TestCinematicController.are_points_close(waypoint1.get_position(), (1, -1, 0))
         assert TestCinematicController.are_points_close(waypoint2.get_position(), (2, 0, 0))
         assert TestCinematicController.are_points_close(waypoint3.get_position(), (1, 1, 0))
+        assert TestCinematicController.are_points_close(waypoint4.get_position(), (0, 0, 0))
         # Check that the drone yaw gets updated, too
         epsilon = 0.01  # How much mathematical error is allowed
         assert abs(waypoint1.get_attitude()[2] - math.pi / 2) < epsilon
         assert abs(waypoint2.get_attitude()[2] - math.pi) < epsilon
         assert abs(waypoint3.get_attitude()[2] - 3 * math.pi / 2) < epsilon
+        assert abs(waypoint4.get_attitude()[2]) < epsilon
 
     @staticmethod
     def are_points_close(point1, point2):
@@ -293,6 +296,46 @@ class TestCinematicController(unittest.TestCase):
         return abs(point1[0] - point2[0]) < epsilon and \
                abs(point1[1] - point2[1]) < epsilon and \
                abs(point1[2] - point2[2]) < epsilon
+
+    # Test that if the bounding box is to the right, the drone yaws right.
+    def test_generate_yaw_waypoints_right(self):
+        yaw_waypoint_generator = YawWaypointGenerator()
+        self.cinematic_controller.set_waypoint_generator(yaw_waypoint_generator)
+        target_x = yaw_waypoint_generator.get_target_centroid_x()
+        target_centroid = (target_x, 0)
+        right_bb_centroid = (target_centroid[0] + 10, target_centroid[1])
+        right_bb = BoundingBox((10, 10), right_bb_centroid)
+        self.cinematic_controller.update_latest_bbs([right_bb])
+        self.cinematic_controller.update_latest_drone_state(origin_drone_state)
+
+        # Now ask for waypoints, which should guide the drone to turn right to center the bounding box.
+        waypoints = self.cinematic_controller.generate_waypoints()
+        assert len(waypoints) == 1
+        waypoint = waypoints[0]
+        assert waypoint.get_position() == (0, 0, 0)
+        assert waypoint.get_attitude()[0] == 0
+        assert waypoint.get_attitude()[1] == 0
+        assert waypoint.get_attitude()[2] < 0
+
+    # Test that if the bounding box is to the left, the drone yaws left.
+    def test_generate_yaw_waypoints_left(self):
+        yaw_waypoint_generator = YawWaypointGenerator()
+        self.cinematic_controller.set_waypoint_generator(yaw_waypoint_generator)
+        target_x = yaw_waypoint_generator.get_target_centroid_x()
+        target_centroid = (target_x, 0)
+        left_bb_centroid = (target_centroid[0] - 10, target_centroid[1])
+        left_bb = BoundingBox((10, 10), left_bb_centroid)
+        self.cinematic_controller.update_latest_bbs([left_bb])
+        self.cinematic_controller.update_latest_drone_state(origin_drone_state)
+
+        # Now ask for waypoints, which should guide the drone to turn left to center the bounding box.
+        waypoints = self.cinematic_controller.generate_waypoints()
+        assert len(waypoints) == 1
+        waypoint = waypoints[0]
+        assert waypoint.get_position() == (0, 0, 0)
+        assert waypoint.get_attitude()[0] == 0
+        assert waypoint.get_attitude()[1] == 0
+        assert waypoint.get_attitude()[2] > 0
 
 
 if __name__ == '__main__':
