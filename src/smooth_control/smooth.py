@@ -5,14 +5,16 @@ Output: Commands sent to the drone to follow the intermediate goals
 """
 
 import numpy as np
+from scipy.interpolate import interp2d
+#from utils.drone_state import DroneState
 
 
-def smooth_gen(list_goals):
-	for goal, t in list_goals:
-		# assume goal is a class with attributes goal.pos, goal.vel...
-		...
-		send_commands(goal)
+def smooth_gen(list_states):
+    # list of drone states
+    goal = list_states[0]
+    send_commands(goal)
 
 
-def send_commands(goal):
-	pass
+def send_commands(command):
+    print(command)
+    pass
