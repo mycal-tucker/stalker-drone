@@ -19,6 +19,8 @@ while not done:
     cinematic_controller.update_latest_bbs(bounding_boxes)
     cinematic_controller.update_latest_drone_state(drone_state)
     cinematic_waypoints = cinematic_controller.generate_waypoints()
+    cinematic_controller.update_cinematic_waypoints(cinematic_waypoints)
+
 
     # 4) Create a smooth trajectory through the waypoints.
     # TODO
