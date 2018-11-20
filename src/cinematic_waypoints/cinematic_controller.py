@@ -120,15 +120,17 @@ class CinematicController:
     def generate_waypoints(self):
         if self.smoothed_bounding_box is None or self.latest_drone_state is None:
             print("Warning: asked to generate waypoints, but some of the current states are None.")
-        if self.cinematic_waypoints==None:
-            return self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box, self.latest_drone_state)
+        if self.cinematic_waypoints is None:
+            self.cinematic_waypoints=self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box, self.latest_drone_state)
+            return self.cinematic_waypoints
         else:
             waypoint = self.cinematic_waypoints[0]
             check_x,check_y,check_z = self.latest_drone_state-waypoint
             if check_x < self.margin and check_y < self.margin and check_z < self.margin:
-                del(self.cinematic_waypoints[0])
+                del self.cinematic_waypoints[0]
                 if len(self.cinematic_waypoints==0):
-                    return self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box, self.latest_drone_state)
+                    self.cinematic_waypoints=self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box, self.latest_drone_state)
+                    return self.cinematic_waypoints
                 else:
                     return self.cinematic_waypoints
 
