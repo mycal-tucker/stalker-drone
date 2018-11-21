@@ -1,6 +1,5 @@
 import math
 
-
 # Representation of a person state, which for now is just x and y location.
 # The key method is estimating the state from a drone state and a bounding box.
 # There's lots of room for calibration and more sophisticated calculation.
@@ -8,6 +7,7 @@ class PersonState:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.radius = 0.5
 
     # Estimate an x, y position from a bounding_box and a drone state. We need the
     # drone state as a sort of reference frame, and then we project into a new point
@@ -23,3 +23,7 @@ class PersonState:
         y_delta = math.sin(drone_state.yaw) * distance_to_bb
 
         return PersonState(drone_state.x + x_delta, drone_state.y + y_delta)
+
+    # Return the state of the person 
+    def get_person_state(self):
+        return (self.x, self.y, self.radius)

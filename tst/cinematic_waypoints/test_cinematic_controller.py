@@ -6,6 +6,7 @@ from cinematic_waypoints.waypoint_generator.ngon_waypoint_generator import NGonW
 from utils.bounding_box import BoundingBox
 from utils.drone_state import DroneState
 import math
+import os
 
 # Define a few helpful variables common across a few tests
 bb_10_10_0_0 = BoundingBox((10, 10), (0, 0))
@@ -336,6 +337,34 @@ class TestCinematicController(unittest.TestCase):
         assert waypoint.get_attitude()[0] == 0
         assert waypoint.get_attitude()[1] == 0
         assert waypoint.get_attitude()[2] > 0
+
+    # Test that visualizaton plot can be generated and saved properly with simple inputs
+    def test_waypoint_visualization_with_ngon_generator(self):
+        # initialize the drone state 
+        origin_drone_state = DroneState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        waypoint_generator = NGonWaypointGenerator(n=6, radius=4)
+        gamma = 0.9
+        cinematic_controller = CinematicController(waypoint_generator=waypoint_generator, bb_filter_gamma=gamma)
+        cinematic_controller.update_latest_drone_state(origin_drone_state)
+
+        # initialize the drone waypoints
+        waypoints = cinematic_controller.generate_waypoints()
+
+        # initialize the person state
+        person_state = PersonState(4,0)
+
+        # initialize the environment
+        environment = Environment()
+        environment.add_obstacles([[(6,0), (4,2), (6,2)],
+                                   [(7,-4), (8,-3), (9,-3), (9,-5), (8,-3.5)],
+                                   [(-5,-2), (0,-5), (0,-2)]])
+
+        # initiliaze visualization object and plot
+        viz = WaypointVisualization(waypoints, person_state, environment)
+        viz.plot('plots/test_waypoint_visualization_with_ngon_generator.png')
+
+        # check that file was saved properly
+        assert os.path.isfile('plots/test_waypoint_visualization_with_ngon_generator.png')
 
 
 if __name__ == '__main__':
