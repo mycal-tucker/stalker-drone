@@ -17,14 +17,15 @@ class CinematicController:
     # be class variables, but this style allows us to keep all tunable parameters in the same
     # place, and it improves testability (e.g. tests can set bb_filter_gamma to whatever value
     # they want).
-    def __init__(self, waypoint_generator=FixedBBWaypointGenerator(), bb_filter_gamma=0.9, bb_match_dimension_importance=0.5):
+    def __init__(self, waypoint_generator=FixedBBWaypointGenerator(), bb_filter_gamma=0.9, bb_match_dimension_importance=0.5, margin = 0.25):
         self.latest_bounding_box = None
         self.smoothed_bounding_box = None
         self.bb_filter_gamma = bb_filter_gamma
         self.bb_match_dimension_importance = bb_match_dimension_importance
+        self.margin = margin #margin is how close we want the drone to be to the desired state
 
         self.latest_drone_state = None
-
+        self.cinematic_waypoints = None
         # Delegate the task of generating waypoints to the waypoint_generator, which must implement
         # the WaypointGenerator interface.
         self.waypoint_generator = waypoint_generator
@@ -99,6 +100,9 @@ class CinematicController:
     def update_latest_drone_state(self, drone_state):
         self.latest_drone_state = drone_state
 
+    def update_cinematic_waypoints(self, cinematic_waypoints):
+        self.cinematic_waypoints = cinematic_waypoints
+
     # Uses a geometric low-pass filter to smooth out human bounding boxes
     def compute_low_pass_filter_bb(self):
         latest_width, latest_height = self.latest_bounding_box.get_dimensions()
@@ -116,4 +120,17 @@ class CinematicController:
     def generate_waypoints(self):
         if self.smoothed_bounding_box is None or self.latest_drone_state is None:
             print("Warning: asked to generate waypoints, but some of the current states are None.")
-        return self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box, self.latest_drone_state)
+        if self.cinematic_waypoints is None:
+            self.cinematic_waypoints=self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box, self.latest_drone_state)
+            return self.cinematic_waypoints
+        else:
+            waypoint = self.cinematic_waypoints[0]
+            check_x,check_y,check_z = self.latest_drone_state-waypoint
+            if check_x < self.margin and check_y < self.margin and check_z < self.margin:
+                del self.cinematic_waypoints[0]
+                if len(self.cinematic_waypoints==0):
+                    self.cinematic_waypoints=self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box, self.latest_drone_state)
+                    return self.cinematic_waypoints
+                else:
+                    return self.cinematic_waypoints
+
