@@ -121,16 +121,21 @@ class CinematicController:
         if self.smoothed_bounding_box is None or self.latest_drone_state is None:
             print("Warning: asked to generate waypoints, but some of the current states are None.")
         if self.cinematic_waypoints is None:
-            self.cinematic_waypoints=self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box, self.latest_drone_state)
+            self.cinematic_waypoints = self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box, self.latest_drone_state)
             return self.cinematic_waypoints
+        # If we reach this point, we already have waypoints cached, so we need to check against them.
+        waypoint = self.cinematic_waypoints[0]
+        x_offset = self.latest_drone_state.x - waypoint.x
+        y_offset = self.latest_drone_state.y - waypoint.y
+        z_offset = self.latest_drone_state.z - waypoint.z
+        # Check if close to the next waypoint. If so, delete the waypoint and update the rest
+        # of the trajectory. If not, just return the current waypoints.
+        if x_offset < self.margin and y_offset < self.margin and z_offset < self.margin:
+            del self.cinematic_waypoints[0]
+            if len(self.cinematic_waypoints) == 0:
+                self.cinematic_waypoints = self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box,
+                                                                                      self.latest_drone_state)
+                return self.cinematic_waypoints
         else:
-            waypoint = self.cinematic_waypoints[0]
-            check_x,check_y,check_z = self.latest_drone_state-waypoint
-            if check_x < self.margin and check_y < self.margin and check_z < self.margin:
-                del self.cinematic_waypoints[0]
-                if len(self.cinematic_waypoints==0):
-                    self.cinematic_waypoints=self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box, self.latest_drone_state)
-                    return self.cinematic_waypoints
-                else:
-                    return self.cinematic_waypoints
+            return self.cinematic_waypoints
 

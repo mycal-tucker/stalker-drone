@@ -20,7 +20,7 @@ class WaypointVisualization():
         self.drone_states  = drone_states
         self.person_state  = person_state
         self.environment   = environment
-        assert(len(drone_states) > 0), 'Warning! need at least one waypoint to vislualize'
+        assert(len(drone_states) > 0), 'Warning! need at least one waypoint to visualize'
 
         # plotting-specific parameters
         self.color_obstacle_fill    = 'skyblue'
@@ -43,14 +43,12 @@ class WaypointVisualization():
                                        'color':'black', 
                                        'weight':'bold'}
 
-
     def set_drone_states(self, drone_states):
         """
         updates the list of drone states to be visualized
         :param drone_states: the list of states to be visualized
         """
         self.drone_states = drone_states
-
 
     def set_person_state(self, person_state):
         """
@@ -66,7 +64,6 @@ class WaypointVisualization():
         :param environment: the environment to be visualized, obstacles assumed to be stationary
         """
         self.environment = environment
-
 
     def plot(self, filename=None):
         """
@@ -141,7 +138,7 @@ class WaypointVisualization():
                            zorder           = z_drone_arrow))
 
         # plot the person, assumed to be stationary
-        if self.person_state != None:
+        if self.person_state is not None:
             person_x, person_y, person_r    = self.person_state.get_person_state()
             ax.add_patch(Circle(xy          = (person_x, person_y),
                                 radius      = person_r,
@@ -165,5 +162,7 @@ class WaypointVisualization():
         ax.axis('equal')
         ax.set_xlim(x_min - self.size_buffer, x_max + self.size_buffer)
         ax.set_ylim(y_min - self.size_buffer, y_max + self.size_buffer)
-        if filename == None:    plt.show()
-        else:                   plt.savefig(filename)
+        if filename is None:
+            plt.show()
+        else:
+            plt.savefig(filename)

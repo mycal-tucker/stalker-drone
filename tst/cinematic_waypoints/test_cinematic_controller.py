@@ -1,10 +1,13 @@
 import unittest
 from cinematic_waypoints.cinematic_controller import CinematicController
+from cinematic_waypoints.waypoint_visualization import WaypointVisualization
 from cinematic_waypoints.waypoint_generator.fixed_bb_waypoint_generator import FixedBBWaypointGenerator
 from cinematic_waypoints.waypoint_generator.yaw_waypoint_generator import YawWaypointGenerator
 from cinematic_waypoints.waypoint_generator.ngon_waypoint_generator import NGonWaypointGenerator
 from utils.bounding_box import BoundingBox
 from utils.drone_state import DroneState
+from utils.environment import Environment
+from utils.person_state import PersonState
 import math
 import os
 
@@ -259,16 +262,16 @@ class TestCinematicController(unittest.TestCase):
         # Check that the drone should start flying somewhere
         waypoints = self.cinematic_controller.generate_waypoints()
         assert len(waypoints) == 1
-        waypoint = waypoints[0]
-        assert waypoint != origin_drone_state
+        first_waypoint = waypoints[0]
+        assert first_waypoint != origin_drone_state
 
         # Now send in no bounding boxes
         self.cinematic_controller.update_latest_bbs(None)
-        # Now check that the drone is told to stay in place.
+        # Now check that the drone is told to continue with the pre-calculated waypoints.
         waypoints = self.cinematic_controller.generate_waypoints()
         assert len(waypoints) == 1
         waypoint = waypoints[0]
-        assert waypoint == origin_drone_state
+        assert waypoint == first_waypoint
 
     # Test that the ngon waypoint generator can make squares.
     def test_generate_square_waypoints(self):
