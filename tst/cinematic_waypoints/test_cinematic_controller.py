@@ -343,8 +343,7 @@ class TestCinematicController(unittest.TestCase):
 
     # Test that visualizaton plot can be generated and saved properly with simple inputs
     def test_waypoint_visualization_with_ngon_generator(self):
-        # initialize the drone state 
-        origin_drone_state = DroneState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        # initialize the drone state
         waypoint_generator = NGonWaypointGenerator(n=6, radius=4)
         gamma = 0.9
         cinematic_controller = CinematicController(waypoint_generator=waypoint_generator, bb_filter_gamma=gamma)
@@ -354,15 +353,15 @@ class TestCinematicController(unittest.TestCase):
         waypoints = cinematic_controller.generate_waypoints()
 
         # initialize the person state
-        person_state = PersonState(4,0)
+        person_state = PersonState(4, 0)
 
         # initialize the environment
         environment = Environment()
-        environment.add_obstacles([[(6,0), (4,2), (6,2)],
-                                   [(7,-4), (8,-3), (9,-3), (9,-5), (8,-3.5)],
-                                   [(-5,-2), (0,-5), (0,-2)]])
+        environment.add_obstacles([[(6, 0), (4, 2), (6, 2)],
+                                   [(7, -4), (8, -3), (9, -3), (9, -5), (8, -3.5)],
+                                   [(-5, -2), (0, -5), (0, -2)]])
 
-        # initiliaze visualization object and plot
+        # initialize visualization object and plot
         viz = WaypointVisualization(waypoints, person_state, environment)
         viz.plot('plots/test_waypoint_visualization_with_ngon_generator.png')
 
