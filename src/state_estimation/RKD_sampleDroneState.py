@@ -6,11 +6,18 @@ Created on Wed Nov 14 10:45:38 2018
 @author: Rosemary
 """
 
-from pyparrot.Minidrone import Mambo
-from pyparrot.Mambo import DroneVision
-import cv2
 import time
+from networking.wifiConnection import WifiConnection
+try:
+    from networking.bleConnection import BLEConnection
+    BLEAvailable = True
+except:
+    BLEAvailable = False
+from utils.colorPrint import color_print
+from commandsandsensors.DroneCommandParser import DroneCommandParser
+from commandsandsensors.DroneSensorParser import DroneSensorParser
 import math
+
 
 # set this to true if you want to fly for the demo
 testFlying = True
@@ -61,6 +68,10 @@ class DroneState:
 
         # this is optionally set elsewhere
         self.user_callback_function = None
+
+        #These are being added to the drone state
+        self.pos_x=0
+        self.pos_y=0
 
     def set_user_callback_function(self, function, args):
         """
@@ -119,6 +130,8 @@ class DroneState:
             self.speed_z = value
         elif (name == "DroneSpeed_ts"):
             self.speed_ts = value
+            self.pos_x = self.speed_x * self.speed_ts
+            self.pos_y = self.speed_y * self.speed_ts
         elif (name == "DroneAltitude_altitude"):
             self.altitude = value
         elif (name == "DroneAltitude_ts"):
@@ -161,7 +174,38 @@ class DroneState:
         my_str += "extra sensors: %s," % self.sensors_dict
         return my_str
 
-class Mambo: 
+class Mambo:
+    def __init__(self, address, use_wifi=False):
+        """
+        Initialize with its BLE address - if you don't know the address, call findMambo
+        and that will discover it for you.
+
+        You can also connect to the wifi on the FPV camera.  Do not use this if the camera is not connected.  Also,
+        ensure you have connected your machine to the wifi on the camera before attempting this or it will not work.
+
+        :param address: unique address for this mambo
+        :param use_wifi: set to True to connect with wifi as well as the BLE
+        """
+        self.address = address
+        self.use_wifi = use_wifi
+        if (use_wifi):
+            self.drone_connection = WifiConnection(self, drone_type="Mambo")
+        else:
+            if (BLEAvailable):
+                self.drone_connection = BLEConnection(address, self)
+            else:
+                self.drone_connection = None
+                color_print(
+                    "ERROR: you are trying to use a BLE connection on a system that doesn't have BLE installed.",
+                    "ERROR")
+                return
+
+        # intialize the command parser
+        self.command_parser = DroneCommandParser()
+
+        # initialize the sensors and the parser
+        self.sensors = DroneState()
+        self.sensor_parser = DroneSensorParser(drone_type="Mambo")
 
     def set_user_sensor_callback(self, function, args):
         """
@@ -188,6 +232,11 @@ class Mambo:
                 (sensor_name, sensor_value, sensor_enum, header_tuple) = sensor
                 if (sensor_name is not None):
                     self.sensors.update(sensor_name, sensor_value, sensor_enum)
+                    #return x,y,z, roll,pith, yaw, x_speed, y_speed, z_speed, roll_speed, pitch_speed, yaw_speed
+                    (roll,pitch,yaw)=self.sensors.quaternion_to_euler_angle(self.quaternion_w, self.quaternion_x,
+                                                   self.quaternion_y, self.quaternion_z)
+                    #not sure how to calculate roll_speed, pitch_speed, and yaw_speed, so setting equal to 0
+                    return [self.pos_x,self.pos_y,self.altitude,roll,pitch,yaw,self.speed_x,self.speed_y,self.speed_z.self,0,0,0]
                     # print(self.sensors)
                 else:
                     color_print(
@@ -206,7 +255,8 @@ class Mambo:
         else:
             print("Sleeeping for 15 seconds")
             mambo.smart_sleep(15)
-    
-    
+
+
+
   
     
