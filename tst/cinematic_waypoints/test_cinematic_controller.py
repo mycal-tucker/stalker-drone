@@ -368,6 +368,30 @@ class TestCinematicController(unittest.TestCase):
         # check that file was saved properly
         assert os.path.isfile('plots/test_waypoint_visualization_with_ngon_generator.png')
 
+    # Test that the controller moves onto the next waypoint appropriately
+    def test_next_waypoint_with_ngon_generator(self):
+        # initialize the drone state
+        self.cinematic_controller.update_latest_drone_state(origin_drone_state)
+        self.cinematic_controller.set_waypoint_generator(NGonWaypointGenerator(n=4,radius=1))
+
+        # generate waypoints
+        waypoints = self.cinematic_controller.generate_waypoints()
+        assert len(waypoints) == 4
+        waypoint1_old, waypoint2_old, waypoint3_old, waypoint4_old = waypoints
+
+        # artificially update state to test waypoint update
+        self.latest_drone_state.x = waypoint1_old[0]
+        self.latest_drone_state.y = waypoint1_old[1]
+        self.latest_drone_state.z = waypoint1_old[2]
+
+        # Regenerate waypoints
+        waypoints=self.cinematic_controller.generate_waypoints()
+        # The first waypoint should be deleted so the length should now be 3
+        assert len(waypoints) == 3
+        waypoint1_new, waypoint2_new, waypoint3_new = waypoints
+        # The new next waypoint should be the same as the old 2nd waypoint
+        assert waypoint1_new == waypoint2_old
+
 
 if __name__ == '__main__':
     unittest.main()
