@@ -4,6 +4,7 @@
 Created on Wed Nov 14 10:45:38 2018
 
 @author: Rosemary
+Source: https://gitlab.dke.univie.ac.at/omilab-education/cmke_drone/blob/f325ef456f157fc4bdda10219b282bbc0212fea7/src/pyparrot/Mambo.py
 """
 
 from pyparrot.Minidrone import Mambo
@@ -12,16 +13,7 @@ import cv2
 import time
 import math
 
-# set this to true if you want to fly for the demo
-testFlying = True
-
-class DroneState:    
-    # get the initial state information
-        print("sleeping")
-        mambo.smart_sleep(1)
-        mambo.ask_for_state_update()
-        mambo.smart_sleep(1)
-        
+class MamboSensors:
     """
     Store the mambo's last known sensor values
     """
@@ -140,10 +132,56 @@ class DroneState:
         # call the user callback if it isn't None
         if (self.user_callback_function is not None):
             self.user_callback_function(self.user_callback_function_args)
+            
+    def get_estimated_z_orientation(self):
+        """
+        Uses the quaternions to return an estimated orientation
+
+        Learn more about unit quaternions here:
+
+        https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
+
+        NOTE: This is not a real compass heading.  0 degrees is where you are facing when
+        the mambo turns on!
+
+        :return: 
+        """
+
+        (X, Y, Z) = self.quaternion_to_euler_angle(self.quaternion_w, self.quaternion_x,
+                                                   self.quaternion_y, self.quaternion_z)
+        return Z
+
+    def quaternion_to_euler_angle(self, w, x, y, z):
+        """
+        This code is directly from:
+
+        https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+
+        :param x:
+        :param y:
+        :param z:
+        :return:
+        """
+        ysqr = y * y
+
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + ysqr)
+        X = math.degrees(math.atan2(t0, t1))
+
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        Y = math.degrees(math.asin(t2))
+
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (ysqr + z * z)
+        Z = math.degrees(math.atan2(t3, t4))
+
+        return X, Y, Z
 
     def __str__(self):
         """
-        Printed struct for debugging
+        Make a nicely printed struct for debugging
 
         :return: string for print calls
         """
@@ -161,7 +199,37 @@ class DroneState:
         my_str += "extra sensors: %s," % self.sensors_dict
         return my_str
 
-class Mambo: 
+
+class Mambo:
+    def __init__(self, address, use_wifi=False):
+        """
+        Initialize with its BLE address - if you don't know the address, call findMambo
+        and that will discover it for you.
+
+        You can also connect to the wifi on the FPV camera.  Do not use this if the camera is not connected.  Also,
+        ensure you have connected your machine to the wifi on the camera before attempting this or it will not work.
+
+        :param address: unique address for this mambo
+        :param use_wifi: set to True to connect with wifi as well as the BLE
+        """
+        self.address = address
+        self.use_wifi = use_wifi
+        if (use_wifi):
+            self.drone_connection = WifiConnection(self, drone_type="Mambo")
+        else:
+            if (BLEAvailable):
+                self.drone_connection = BLEConnection(address, self)
+            else:
+                self.drone_connection = None
+                color_print("ERROR: you are trying to use a BLE connection on a system that doesn't have BLE installed.", "ERROR")
+                return
+
+        # intialize the command parser
+        self.command_parser = DroneCommandParser()
+
+        # initialize the sensors and the parser
+        self.sensors = MamboSensors()
+        self.sensor_parser = DroneSensorParser(drone_type="Mambo")
 
     def set_user_sensor_callback(self, function, args):
         """
@@ -195,18 +263,46 @@ class Mambo:
                         "WARN")
                     color_print("This sensor is missing (likely because we don't need it)", "WARN")
 
-        
- ## end of code from online       
-    
-    def set_user_callback_function(self, user_callback_function=None, user_callback_args=None):   
+        if (ack):
+            self.drone_connection.ack_packet(buffer_id, sequence_number)
 
-        if (mambo.sensors.flying_state != "emergency"):
-            print("flying state is %s" % mambo.sensors.flying_state)
-    
-        else:
-            print("Sleeeping for 15 seconds")
-            mambo.smart_sleep(15)
-    
-    
-  
+
+    def connect(self, num_retries):
+        """
+        Connects to the drone and re-tries in case of failure the specified number of times.  Seamlessly
+        connects to either wifi or BLE depending on how you initialized it
+
+        :param: num_retries is the number of times to retry
+
+        :return: True if it succeeds and False otherwise
+        """
+
+        # special case for when the user tries to do BLE when it isn't available
+        if (self.drone_connection is None):
+            return False
+
+        connected = self.drone_connection.connect(num_retries)
+        return connected
+
+
+    def disconnect(self):
+        """
+        Disconnect the BLE connection.  Always call this at the end of your programs to
+        cleanly disconnect.
+
+        :return: void
+        """
+        self.drone_connection.disconnect()
+
+    def ask_for_state_update(self):
+        """
+        Ask for a full state update (likely this should never be used but it can be called if you want to see
+        everything the mambo is storing)
+
+        :return: nothing but it will eventually fill the MamboSensors with all of the state variables as they arrive
+        """
+        command_tuple = self.command_parser.get_command_tuple("common", "Common", "AllStates")
+        return self.drone_connection.send_noparam_command_packet_ack(command_tuple)
+
+
     
