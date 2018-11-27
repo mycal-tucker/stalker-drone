@@ -60,7 +60,7 @@ class PolynomialPredictor:
 
         # Project for each of the requested times
         projections = []
-        step_size_x = 0.01  # The smaller the better resolution, but also slower computationally.
+        step_size_x = 0.00001  # The smaller the better resolution, but also slower computationally.
         for time_delta in time_deltas_to_predict:
             distance_to_cover = time_delta * projected_speed
             # Inch forward along the curve

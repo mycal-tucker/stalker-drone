@@ -8,8 +8,10 @@ from utils.bounding_box import BoundingBox
 from utils.drone_state import DroneState
 from utils.environment import Environment
 from utils.person_state import PersonState
+from person_detection.person_predictor.polynomial_predictor import PolynomialPredictor
 import math
 import os
+import time
 
 # Define a few helpful variables common across a few tests
 bb_10_10_0_0 = BoundingBox((10, 10), (0, 0))
@@ -276,6 +278,7 @@ class TestCinematicController(unittest.TestCase):
     # Test that the ngon waypoint generator can make squares.
     def test_generate_square_waypoints(self):
         self.cinematic_controller.update_latest_drone_state(origin_drone_state)
+        self.cinematic_controller.update_latest_bbs([bb_10_10_0_0])
         self.cinematic_controller.set_waypoint_generator(NGonWaypointGenerator(n=4, radius=1))
 
         # Now ask for waypoints, which should describe a square around the point (1, 0)
@@ -292,7 +295,43 @@ class TestCinematicController(unittest.TestCase):
         assert abs(waypoint1.get_attitude()[2] - math.pi / 2) < epsilon
         assert abs(waypoint2.get_attitude()[2] - math.pi) < epsilon
         assert abs(waypoint3.get_attitude()[2] - 3 * math.pi / 2) < epsilon
-        assert abs(waypoint4.get_attitude()[2]) < epsilon
+        assert abs(waypoint4.get_attitude()[2] - 2 * math.pi) < epsilon
+
+    # Test that the ngon waypoint generator can make squares around a moving target
+    def test_generate_square_waypoints_around_prediction(self):
+        self.cinematic_controller.person_predictor = PolynomialPredictor(weight_decay_factor=2)
+        self.cinematic_controller.update_latest_drone_state(origin_drone_state)
+        self.cinematic_controller.update_latest_bbs([BoundingBox((10, 10), (0, 0))])
+        time.sleep(1)
+        self.cinematic_controller.update_latest_bbs([BoundingBox((9, 9), (0, 0))])
+        time.sleep(1)
+        self.cinematic_controller.update_latest_bbs([BoundingBox((8, 8), (0, 0))])
+        time.sleep(1)
+        self.cinematic_controller.update_latest_bbs([BoundingBox((7, 7), (0, 0))])
+        time.sleep(1)
+        self.cinematic_controller.update_latest_bbs([BoundingBox((6, 6), (0, 0))])
+        self.cinematic_controller.set_waypoint_generator(NGonWaypointGenerator(n=4, radius=1))
+
+        # Now ask for waypoints, which should describe a square around moving person
+        waypoints = self.cinematic_controller.generate_waypoints()
+        assert len(waypoints) == 4  # 4 points
+        waypoint1, waypoint2, waypoint3, waypoint4 = waypoints
+        # Check that the positions are correct
+        allowed_error = 0.01
+        assert waypoint1.get_position()[0] > 0
+        assert abs(waypoint1.get_position()[1] + 1) < allowed_error
+        assert waypoint2.get_position()[0] > waypoint1.get_position()[0]
+        assert abs(waypoint2.get_position()[1]) < allowed_error
+        assert waypoint3.get_position()[0] < waypoint2.get_position()[0]
+        assert abs(waypoint3.get_position()[1] - 1) < allowed_error
+        assert waypoint4.get_position()[0] < waypoint3.get_position()[0]
+        assert abs(waypoint4.get_position()[1]) < allowed_error
+        # Check that the drone yaw gets updated, too
+        epsilon = 0.01  # How much mathematical error is allowed
+        assert abs(waypoint1.get_attitude()[2] - math.pi / 2) < epsilon
+        assert abs(waypoint2.get_attitude()[2] - math.pi) < epsilon
+        assert abs(waypoint3.get_attitude()[2] - 3 * math.pi / 2) < epsilon
+        assert abs(waypoint4.get_attitude()[2] - 2 * math.pi) < epsilon
 
     @staticmethod
     def are_points_close(point1, point2):
@@ -341,13 +380,14 @@ class TestCinematicController(unittest.TestCase):
         assert waypoint.get_attitude()[1] == 0
         assert waypoint.get_attitude()[2] > 0
 
-    # Test that visualizaton plot can be generated and saved properly with simple inputs
+    # Test that visualization plot can be generated and saved properly with simple inputs
     def test_waypoint_visualization_with_ngon_generator(self):
         # initialize the drone state
         waypoint_generator = NGonWaypointGenerator(n=6, radius=4)
         gamma = 0.9
         cinematic_controller = CinematicController(waypoint_generator=waypoint_generator, bb_filter_gamma=gamma)
         cinematic_controller.update_latest_drone_state(origin_drone_state)
+        cinematic_controller.update_latest_bbs([bb_10_10_0_0])
 
         # initialize the drone waypoints
         waypoints = cinematic_controller.generate_waypoints()
@@ -362,7 +402,7 @@ class TestCinematicController(unittest.TestCase):
                                    [(-5, -2), (0, -5), (0, -2)]])
 
         # initialize visualization object and plot
-        viz = WaypointVisualization(waypoints, person_state, environment)
+        viz = WaypointVisualization(waypoints, [person_state], environment)
         viz.plot('plots/test_waypoint_visualization_with_ngon_generator.png')
 
         # check that file was saved properly
@@ -372,7 +412,7 @@ class TestCinematicController(unittest.TestCase):
     def test_next_waypoint_with_ngon_generator(self):
         # initialize the drone state
         self.cinematic_controller.update_latest_drone_state(origin_drone_state)
-        self.cinematic_controller.set_waypoint_generator(NGonWaypointGenerator(n=4,radius=1))
+        self.cinematic_controller.set_waypoint_generator(NGonWaypointGenerator(n=4, radius=1))
 
         # generate waypoints
         waypoints = self.cinematic_controller.generate_waypoints()
@@ -380,17 +420,49 @@ class TestCinematicController(unittest.TestCase):
         waypoint1_old, waypoint2_old, waypoint3_old, waypoint4_old = waypoints
 
         # artificially update state to test waypoint update
-        self.latest_drone_state.x = waypoint1_old[0]
-        self.latest_drone_state.y = waypoint1_old[1]
-        self.latest_drone_state.z = waypoint1_old[2]
+        self.cinematic_controller.latest_drone_state.x = waypoint1_old.x
+        self.cinematic_controller.latest_drone_state.y = waypoint1_old.y
+        self.cinematic_controller.latest_drone_state.z = waypoint1_old.z
 
         # Regenerate waypoints
-        waypoints=self.cinematic_controller.generate_waypoints()
+        waypoints = self.cinematic_controller.generate_waypoints()
         # The first waypoint should be deleted so the length should now be 3
         assert len(waypoints) == 3
         waypoint1_new, waypoint2_new, waypoint3_new = waypoints
         # The new next waypoint should be the same as the old 2nd waypoint
         assert waypoint1_new == waypoint2_old
+
+    # Test visualization for ngon points around a predicted humans path
+    def test_waypoint_visualization_with_ngon_generator_predicted_human(self):
+        # initialize the drone state
+        waypoint_generator = NGonWaypointGenerator(n=6, radius=4)
+        gamma = 0.9
+        cinematic_controller = CinematicController(waypoint_generator=waypoint_generator, bb_filter_gamma=gamma)
+        cinematic_controller.update_latest_drone_state(DroneState(x=2, y=-3))
+        cinematic_controller.person_predictor = PolynomialPredictor(poly_degree=2, weight_decay_factor=1)
+        cinematic_controller.update_latest_bbs([BoundingBox((10, 10), (0, 0))])
+        time.sleep(.001)
+        cinematic_controller.update_latest_bbs([BoundingBox((5, 5), (50, 0))])
+        time.sleep(.001)
+        cinematic_controller.update_latest_bbs([BoundingBox((2, 2), (50, 0))])
+        time.sleep(.001)
+        cinematic_controller.update_latest_bbs([BoundingBox((1, 1), (50, 0))])
+
+        # initialize the drone waypoints
+        waypoints = cinematic_controller.generate_waypoints()
+
+        # initialize the person state
+        person_states = cinematic_controller.person_predictor.predict_next_person_state([2, 4, 6, 8, 10, 15, 20, 25, 30])
+
+        # initialize the environment
+        environment = Environment()
+        environment.add_obstacles([[(6, 0), (4, 2), (6, 2)],
+                                   [(8, -4), (9, -3), (10, -3), (10, -5), (9, -3.5)],
+                                   [(-6, -2), (-1, -5), (-1, -2)]])
+
+        # initialize visualization object and plot
+        viz = WaypointVisualization(waypoints, person_states, environment)
+        viz.plot('plots/moving_target.png')
 
 
 if __name__ == '__main__':

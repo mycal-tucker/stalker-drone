@@ -21,7 +21,7 @@ class YawWaypointGenerator(WaypointGenerator):
     # The rough idea is:
     # if the box is left of center, turn left (right of center, turn right)
     # if there is no box, return the current drone state to hover.
-    def generate_waypoints(self, bounding_box, drone_state):
+    def generate_waypoints(self, bounding_box, drone_state, person_predictor=None):
         if bounding_box is None:
             return [drone_state]
         x_diff = bounding_box.get_centroid()[0] - self.target_centroid_x

@@ -6,5 +6,5 @@ import abc
 # for a drone to follow.
 class WaypointGenerator(abc.ABC):
     @abc.abstractmethod
-    def generate_waypoints(self, bounding_box, drone_state):
+    def generate_waypoints(self, bounding_box, drone_state, person_predictor=None):
         pass

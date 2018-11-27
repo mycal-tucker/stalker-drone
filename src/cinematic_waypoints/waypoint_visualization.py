@@ -7,18 +7,19 @@ import matplotlib.pyplot as plt
 
 
 class WaypointVisualization():
-    def __init__(self, drone_states, person_state=None, environment=None):
+    def __init__(self, drone_states, person_states=None, environment=None):
         """
         constructor for a waypoint visualization object
         :param drone_states: list of drone state objects that represent the drone trajectory
-        :param person_state: optional, a person state object representing the person
+        :param person_states: optional, list of person state objects representing the person. Perhaps one
+                                person moving over time, or several people
         :param environment: optional, an environment object that desribes the obstacles in the environment
         :returns: a new waypoint visualization object
         :requires: that the drone states list contains at least one drone state object
         """
         # user supplied parameters for plotting
         self.drone_states  = drone_states
-        self.person_state  = person_state
+        self.person_states  = person_states
         self.environment   = environment
         assert(len(drone_states) > 0), 'Warning! need at least one waypoint to visualize'
 
@@ -50,12 +51,12 @@ class WaypointVisualization():
         """
         self.drone_states = drone_states
 
-    def set_person_state(self, person_state):
+    def set_person_states(self, person_states):
         """
         updates the person state to be visualized
-        :param person_state: the person to be visualized, assumed to be stationary
+        :param person_states: list of person states to be visualized
         """
-        self.person_state = person_state
+        self.person_states = person_states
 
 
     def set_environment(self, environment):
@@ -138,14 +139,15 @@ class WaypointVisualization():
                            zorder           = z_drone_arrow))
 
         # plot the person, assumed to be stationary
-        if self.person_state is not None:
-            person_x, person_y, person_r    = self.person_state.get_person_state()
-            ax.add_patch(Circle(xy          = (person_x, person_y),
-                                radius      = person_r,
-                                facecolor   = self.color_person_fill,
-                                edgecolor   = self.color_person_edge,
-                                lw          = self.size_edge,
-                                zorder      = z_person))
+        if self.person_states is not None:
+            for person_state in self.person_states:
+                person_x, person_y, person_r    = person_state.get_person_state()
+                ax.add_patch(Circle(xy          = (person_x, person_y),
+                                    radius      = person_r,
+                                    facecolor   = self.color_person_fill,
+                                    edgecolor   = self.color_person_edge,
+                                    lw          = self.size_edge,
+                                    zorder      = z_person))
 
         if self.environment != None:
             for obstacle in self.environment.get_obstacles():

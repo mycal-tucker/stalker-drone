@@ -17,11 +17,13 @@ class PersonState:
     def get_person_state_from_bb(drone_state, bounding_box):
         # For first implementation, just estimate distance based on size. This is a bit dumb.
         bb_area = bounding_box.get_area()
-        distance_to_bb = 1.0 / (bb_area * bb_area)
+        distance_to_bb = 100.0 / (bb_area * bb_area)
+        # FIXME: this angle calculation also needs calibration.
+        angle_to_center_bb = math.atan2(bounding_box.get_centroid()[0], 100)
 
         # Now project forward.
-        x_delta = math.cos(drone_state.yaw) * distance_to_bb
-        y_delta = math.sin(drone_state.yaw) * distance_to_bb
+        x_delta = math.cos(drone_state.yaw + angle_to_center_bb) * distance_to_bb
+        y_delta = math.sin(drone_state.yaw + angle_to_center_bb) * distance_to_bb
 
         return PersonState(drone_state.x + x_delta, drone_state.y + y_delta)
 

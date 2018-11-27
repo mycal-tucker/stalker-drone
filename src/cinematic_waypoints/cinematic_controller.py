@@ -1,6 +1,6 @@
-from utils.bounding_box import BoundingBox
-from utils.drone_state import DroneState
 from cinematic_waypoints.waypoint_generator.fixed_bb_waypoint_generator import FixedBBWaypointGenerator
+from utils.bounding_box import BoundingBox
+from utils.person_state import PersonState
 import numpy as np
 import numpy.linalg
 import math
@@ -17,18 +17,20 @@ class CinematicController:
     # be class variables, but this style allows us to keep all tunable parameters in the same
     # place, and it improves testability (e.g. tests can set bb_filter_gamma to whatever value
     # they want).
-    def __init__(self, waypoint_generator=FixedBBWaypointGenerator(), bb_filter_gamma=0.9, bb_match_dimension_importance=0.5, margin = 0.25):
+    def __init__(self, waypoint_generator=FixedBBWaypointGenerator(), bb_filter_gamma=0.9,
+                 bb_match_dimension_importance=0.5, margin=0.25, person_predictor=None):
         self.latest_bounding_box = None
         self.smoothed_bounding_box = None
         self.bb_filter_gamma = bb_filter_gamma
         self.bb_match_dimension_importance = bb_match_dimension_importance
-        self.margin = margin #margin is how close we want the drone to be to the desired state
+        self.margin = margin # margin is how close we want the drone to be to the desired state
 
         self.latest_drone_state = None
         self.cinematic_waypoints = None
         # Delegate the task of generating waypoints to the waypoint_generator, which must implement
         # the WaypointGenerator interface.
         self.waypoint_generator = waypoint_generator
+        self.person_predictor = person_predictor
 
     def set_waypoint_generator(self, waypoint_generator):
         print("Why would you update the waypoint generator? Only call this from a test.")
@@ -59,6 +61,10 @@ class CinematicController:
             self.smoothed_bounding_box = best_match_bb
         else:
             self.smoothed_bounding_box = self.compute_low_pass_filter_bb()
+        # Compute a person state from the bounding box
+        if self.person_predictor is not None:
+            person_state = PersonState.get_person_state_from_bb(self.latest_drone_state, self.smoothed_bounding_box)
+            self.person_predictor.add_person_state(person_state)
 
     # Given a list of bounding boxes, returns the one that best matches the currently-tracked
     # bounding box.
@@ -121,7 +127,9 @@ class CinematicController:
         if self.smoothed_bounding_box is None or self.latest_drone_state is None:
             print("Warning: asked to generate waypoints, but some of the current states are None.")
         if self.cinematic_waypoints is None:
-            self.cinematic_waypoints = self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box, self.latest_drone_state)
+            self.cinematic_waypoints = self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box,
+                                                                                  self.latest_drone_state,
+                                                                                  self.person_predictor)
             return self.cinematic_waypoints
         # If we reach this point, we already have waypoints cached, so we need to check against them.
         waypoint = self.cinematic_waypoints[0]
@@ -134,8 +142,7 @@ class CinematicController:
             del self.cinematic_waypoints[0]
             if len(self.cinematic_waypoints) == 0:
                 self.cinematic_waypoints = self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box,
-                                                                                      self.latest_drone_state)
-                return self.cinematic_waypoints
-        else:
-            return self.cinematic_waypoints
+                                                                                      self.latest_drone_state,
+                                                                                      self.person_predictor)
+        return self.cinematic_waypoints
 
