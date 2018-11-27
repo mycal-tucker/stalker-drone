@@ -303,6 +303,20 @@ class Mambo:
         """
         command_tuple = self.command_parser.get_command_tuple("common", "Common", "AllStates")
         return self.drone_connection.send_noparam_command_packet_ack(command_tuple)
+    
+    def get_position(self):
+        #NOTE: have velocities, not positions in here right now
+        pos_x = self.update_sensors(self.speed_x)
+        pos_y = self.update_sensors(self.speed_y)
+        pos_z = self.update_sensors(self.speed_z)
+        return pos_x, pos_y, pos_z
+    
+    def get_attitude(self):
+        (roll, pitch, yaw) = self.quaternion_to_euler_angle(self.quaternion_w, self.quaternion_x,
+                                                   self.quaternion_y, self.quaternion_z) 
+        return roll, pitch, yaw
+    
+    
 
 
     
