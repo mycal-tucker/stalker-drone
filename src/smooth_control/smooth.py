@@ -48,14 +48,16 @@ if __name__ == "__main__":
             mambo.safe_takeoff(5)
 
             if (mambo.sensors.flying_state != "emergency"):
+                dur = 1
 
-                move_forward(mambo, 20, 1)
-                move_back(mambo, 20, 1)
-                move_left(mambo, 20, 1)
-                move_right(mambo, 20, 1)
-                move_up(mambo, 20, 1)
-                move_down(mambo, 20, 1)
-                yaw(mambo, -90)
+                move(mambo, dx=-0.1, dy=-0.5, dz=0, dyaw=90, duration=dur)
+                # move_forward(mambo, 20, dur)
+                # move_backward(mambo, 20, dur)
+                # move_left(mambo, 20, dur)
+                # move_right(mambo, 20, dur)
+                # move_up(mambo, 20, dur)
+                # move_down(mambo, 20, dur)
+                # yaw(mambo, -90)
 
 
         except Exception as e: 
