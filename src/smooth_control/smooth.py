@@ -10,7 +10,7 @@ Output: Commands sent to the drone to follow the intermediate goals
 import numpy as np
 from scipy.interpolate import interp2d
 #from utils.drone_state import DroneState
-from move_commands import move_forward
+from move_commands import *
 import sys
 
 
@@ -49,7 +49,13 @@ if __name__ == "__main__":
 
             if (mambo.sensors.flying_state != "emergency"):
 
-                move_forward(mambo)
+                move_forward(mambo, 20, 1)
+                move_back(mambo, 20, 1)
+                move_left(mambo, 20, 1)
+                move_right(mambo, 20, 1)
+                move_up(mambo, 20, 1)
+                move_down(mambo, 20, 1)
+                yaw(mambo, -90)
 
 
         except Exception as e: 
