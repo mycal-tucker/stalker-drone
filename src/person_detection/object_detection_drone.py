@@ -5,11 +5,11 @@ import datetime
 
 from pyparrot.Minidrone import Mambo
 from pyparrot.DroneVision import DroneVision
-import threading
-import time
-import os
+#import threading
+#import time
+#import os
 
-from os.path import isfile, join
+#from os.path import isfile, join
 
 # You will need to download:
 #  1) a pre-trained tensorflow model which performs object detection on MSCOCO objects
@@ -45,7 +45,11 @@ from os.path import isfile, join
 # If interested, consult the Detection Model Zoo for other pre-trained models:
 # https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md
     
-    
+class UserVision:
+    def __init__(self, vision):
+        self.index = 0
+        self.vision = vision
+            
 MODEL         = 'ssdlite_mobilenet_v2_coco_2018_05_09/frozen_inference_graph.pb'
 LABELS        = 'mscoco_label_map.pbtxt'
 REPORT_TIMING = False
@@ -144,60 +148,54 @@ if __name__ == "__main__":
 
     # begin processing the default camera feed for your device:
 
-class UserVision:
-    def __init__(self, vision):
-        self.index = 0
-        self.vision = vision
-mambo = Mambo(mamboAddr, use_wifi=True)
-print("trying to connect to mambo now")
-success = mambo.connect(num_retries=3)
-print("connected: %s" % success)
 
-if (success):
-    # get the state information
-    print("sleeping")
-    mambo.smart_sleep(1)
-    mambo.ask_for_state_update()
-    mambo.smart_sleep(1)
-
-    print("Preparing to open vision")
-    mamboVision = DroneVision(mambo, is_bebop=False, buffer_size=30)
-    userVision = UserVision(mamboVision)
-    mamboVision.set_user_callback_function(userVision.save_pictures, user_callback_args=None)
-    success = mamboVision.open_video() #Open the video stream using ffmpeg for capturing and processing
-    print("Success in opening vision is %s" % success)
+    mamboAddr = "e0:14:d0:63:3d:d0"
+    mambo = Mambo(mamboAddr, use_wifi=True)
+    print("trying to connect to mambo now")
+    success = mambo.connect(num_retries=3)
+    print("connected: %s" % success)
 
     if (success):
-        print("Vision successfully started!")
+        # get the state information
+        print("sleeping")
+        mambo.smart_sleep(1)
+        mambo.ask_for_state_update()
+        mambo.smart_sleep(1)
 
-        frame = mamboVision.get_latest_valid_picture()
+        print("Preparing to open vision")
+        mamboVision = DroneVision(mambo, is_bebop=False, buffer_size=30)
+        userVision = UserVision(mamboVision)
+        mamboVision.set_user_callback_function(userVision.save_pictures, user_callback_args=None)
+        success = mamboVision.open_video() #Open the video stream using ffmpeg for capturing and processing
+        print("Success in opening vision is %s" % success)
+
+        if (success):
+            print("Vision successfully started!")
+
+            frame = mamboVision.get_latest_valid_picture()
         
-        #here should be input to detect.py
+            #here should be input to detect.py
         
-        # run inference
-        res = run_inference_for_single_image(frame, sess, tensor_dict, image_tensor)
+            # run inference
+            res = run_inference_for_single_image(frame, sess, tensor_dict, image_tensor)
 
-        # view the bounding boxes:
-        cv2_visualize_results(frame, res, labels)
-        cv2.imshow('frame', frame)
+            # view the bounding boxes:
+            cv2_visualize_results(frame, res, labels)
+            cv2.imshow('frame', frame)
 
-        # quit if the user presses 'q' on the keyboard:
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-        
-        # done doing vision demo
-        print("Ending the sleep and vision")
-        mamboVision.close_video()
+            # done doing vision demo
+            print("Ending the sleep and vision")
+            mamboVision.close_video()
 
-        mambo.smart_sleep(5)
+            mambo.smart_sleep(5)
 
 
-    print("disconnecting")
-    mambo.disconnect()
+        print("disconnecting")
+        mambo.disconnect()
  
     
-if __name__=="__main__":
-    main()
+#if __name__=="__main__":
+#    main()
             
 #    cap = cv2.VideoCapture(0)
 #    while True:
