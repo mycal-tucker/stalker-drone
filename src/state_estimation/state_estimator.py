@@ -200,7 +200,7 @@ class MamboSensors:
         return my_str
 
 
-class Mambo:
+class MamboState:
     def __init__(self, address, use_wifi=False):
         """
         Initialize with its BLE address - if you don't know the address, call findMambo
@@ -265,6 +265,8 @@ class Mambo:
 
         if (ack):
             self.drone_connection.ack_packet(buffer_id, sequence_number)
+            
+        #return self.sensors
 
 
     def connect(self, num_retries):
@@ -306,15 +308,37 @@ class Mambo:
     
     def get_position(self):
         #NOTE: have velocities, not positions in here right now
-        pos_x = self.update_sensors(self.speed_x)
-        pos_y = self.update_sensors(self.speed_y)
-        pos_z = self.update_sensors(self.speed_z)
-        return pos_x, pos_y, pos_z
+        self.pos_x = self.sensors.speed_x
+        self.pos_y = self.sensors.speed_y
+        self.pos_z = self.sensors.speed_z
+        
+        return self.pos_x, self.pos_y, self.pos_z
+    
+    def get_velocity(self):
+        self.vel_x = self.sensors.speed_x
+        self.vel_y = self.sensors.speed_y
+        self.vel_z = self.sensors.speed_z
+        
+        return self.vel_x, self.vel_y, self.vel_z
     
     def get_attitude(self):
-        (roll, pitch, yaw) = self.quaternion_to_euler_angle(self.quaternion_w, self.quaternion_x,
-                                                   self.quaternion_y, self.quaternion_z) 
-        return roll, pitch, yaw
+        q1 = self.sensors.quaternion_w
+        q2 = self.sensors.quaternion_x
+        q3 = self.sensors.quaternion_y
+        q4 = self.sensors.quaternion_z
+        
+        self.roll, self.pitch, self.yaw = MamboSensors.quaternion_to_euler_angle(q1, q2, q3, q4)
+
+        return self.roll, self.pitch, self.yaw
+    
+    def current_drone_state(self):
+        current_pos = self.pos_x, self.pos_y, self.pos_z
+        current_vel = self.vel_x, self.vel_y, self.vel_z
+        current_att = self.roll, self.pitch, self.yaw
+        current_ts = self.quaternion_ts
+        currentstate = current_pos, current_vel, current_att, current_ts
+        
+        return currentstate
     
     
 
