@@ -1,7 +1,7 @@
 # Representation of the drone state, using linear and angular poses and velocities.
 class DroneState:
     def __init__(self, x=0, y=0, z=0, roll=0, pitch=0, yaw=0,
-                 x_dot=0, y_dot=0, z_dot=0, roll_dot=0, pitch_dot=0, yaw_dot=0):
+                 x_dot=0, y_dot=0, z_dot=0, roll_dot=0, pitch_dot=0, yaw_dot=0, uncertainty=0.5):
         self.x = x
         self.y = y
         self.z = z
@@ -14,6 +14,7 @@ class DroneState:
         self.roll_dot = roll_dot
         self.pitch_dot = pitch_dot
         self.yaw_dot = yaw_dot
+        self.uncertainty = uncertainty
 
     def get_position(self):
         return self.x, self.y, self.z
@@ -26,3 +27,6 @@ class DroneState:
 
     def get_angular_velocities(self):
         return self.roll_dot, self.pitch_dot, self.yaw_dot
+
+    def get_uncertainty(self):
+        return self.uncertainty
