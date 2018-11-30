@@ -1,5 +1,10 @@
 import numpy as np
 import tensorflow as tf
+import os
+import sys
+import cv2
+
+sys.path.append("..")
 
 from utils.bounding_box import BoundingBox
 
@@ -36,7 +41,7 @@ class TFDetector:
 
     # Given an image, returns the bounding box of the person in the image.
     # TODO: generalize to return a list of bounding boxes
-    def detect_bounding_box(self, image):
+    def detect_bounding_box(self, image, visualize=False):
         # Create a tf session.
         self.detection_graph.as_default()
         with tf.Session(graph=self.detection_graph) as sess:
@@ -52,14 +57,59 @@ class TFDetector:
             image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
 
             output_dict = sess.run(tensor_dict, feed_dict={image_tensor: np.expand_dims(image, 0)})
+            TFDetector.update_output_dict(output_dict)
 
             bb = TFDetector.create_bb_from_tf_result(image, output_dict, self.labels)
+
+            if visualize:
+                # Display the image and the overlayed bounding box
+                center_x, center_y = bb.centroid
+                width, height = bb.dimensions
+
+                min_x = int(center_x - width / 2)
+                min_y = int(center_y - height / 2)
+                print("center_x", center_x)
+                max_x = int(center_x + width / 2)
+                max_y = int(center_y + height / 2)
+                cv2.rectangle(image, (min_x, min_y), (max_x, max_y), (0,255,0), 2)
+                
+                # class label viz
+                label_background_color = (0, 255, 0)
+                
+                label_text = "this guy"
+                label_text_color = (0,0,0)
+
+                label_size = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 1, 1)[0]
+                label_left = min_x
+                label_top = min_y - label_size[1]
+                if (label_top < 1):
+                    label_top = 1
+                label_right = label_left + label_size[0]
+                label_bottom = label_top + label_size[1]
+                cv2.rectangle(image, (label_left - 1, label_top - 1), (label_right + 1, label_bottom + 1),
+                              label_background_color, -1)
+
+                # label text above the box
+                cv2.putText(image, label_text, (label_left, label_bottom), cv2.FONT_HERSHEY_SIMPLEX, 1, label_text_color, 2,cv2.LINE_AA)
+            
+                cv2.imshow("image", image)
+                cv2.waitKey(0)
             return bb
+
+
+
+    @staticmethod
+    def update_output_dict(original_dict):
+        original_dict['num_detections'] = int(original_dict['num_detections'][0])
+        original_dict['detection_classes'] = original_dict['detection_classes'][0].astype(np.uint8)
+        original_dict['detection_boxes'] = original_dict['detection_boxes'][0]
+        original_dict['detection_scores'] = original_dict['detection_scores'][0]
 
     @staticmethod
     def create_bb_from_tf_result(image, output_dict, labels, detect_thresh=0.5):
         imheight, imwidth, _ = image.shape
         for ix, score in enumerate(output_dict['detection_scores']):
+            #max_score = max(score)  # FIXME: this is bad
             if score > detect_thresh:
                 [ymin, xmin, ymax, xmax] = output_dict['detection_boxes'][ix]
                 classid = output_dict['detection_classes'][ix]
@@ -68,6 +118,15 @@ class TFDetector:
                 if classid == 1:  # refers to person
 
                     dimensions = ((xmax - xmin) * imwidth, (ymax - ymin) * imheight)
-                    centroid = (np.mean([xmax, xmin]), np.mean([ymax, ymin]))
+                    centroid = (np.mean([xmax * imwidth, xmin * imwidth]), np.mean([ymax * imheight, ymin * imheight]))
                     bb = BoundingBox(dimensions, centroid)
                     return bb
+
+if __name__=='__main__':
+    print("hello world2")
+    my_detector = TFDetector()
+    loaded_image = cv2.imread('../../data/thi.png')
+    detect_bb = my_detector.detect_bounding_box(loaded_image, visualize=True)
+    print(detect_bb)
+
+    

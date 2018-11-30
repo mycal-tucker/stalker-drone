@@ -6,7 +6,7 @@ Author: Amy McGovern
 from __future__ import print_function
 from imutils.object_detection import non_max_suppression
 from imutils import paths
-from imutils import contours
+from imutils  import contours
 from pyparrot.Minidrone import Mambo
 from pyparrot.DroneVision import DroneVision
 
