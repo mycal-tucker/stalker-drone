@@ -14,11 +14,19 @@ from move_commands import *
 import sys
 
 
-def smooth_gen(list_states):
+def smooth_gen(drone_state, cinematic_waypoints, duration=1):
     # list of drone states
-    goal = list_states[0]
-    ...
+    goal = cinematic_waypoints[0]
 
+    Dx = goal.x - drone_state.x
+    Dy = goal.y - drone_state.y
+    dz = goal.z - drone_state.z
+    dyaw = goal.yaw - drone_state.yaw
+
+    dx = Dx*np.sin(np.deg2rad(-dyaw))
+    dy = Dy*np.cos(np.deg2rad(-dyaw))
+
+    move(mambo, dx=dx, dy=dy, dz=dz, dyaw=dyaw, duration=duration)
 
 
 if __name__ == "__main__":
