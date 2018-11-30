@@ -45,10 +45,44 @@ from pyparrot.DroneVision import DroneVision
 # If interested, consult the Detection Model Zoo for other pre-trained models:
 # https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md
     
+
+
+
+
+ #### NOTES 
+'''
+"Errno Port something in use"
+the problem is that the python scripts leave the UDP ports on if you cancel it before it mambo.disconnects
+lsof -i     to check which port is still on 
+find the PID of the python script
+kill -9 [pid number] to kill
+
+restart!
+
+"Trouble connecting to camera"
+something about powercycling the drone, mark said it once
+just take battery out and put it back in
+
+
+
+
+'''
+
 class UserVision:
     def __init__(self, vision):
         self.index = 0
         self.vision = vision
+
+    # def save_pictures(self, args):
+    # print("in save pictures on image %d " % self.index)
+
+    # img = self.vision.get_latest_valid_picture()
+
+    # if (img is not None):
+    #     filename = "test_image_%06d.png" % self.index
+    #     cv2.imwrite(filename, img)
+    #     self.index +=1
+    #     #print(self.index)
             
 MODEL         = 'ssdlite_mobilenet_v2_coco_2018_05_09/frozen_inference_graph.pb'
 LABELS        = 'mscoco_label_map.pbtxt'
@@ -165,29 +199,28 @@ if __name__ == "__main__":
         print("Preparing to open vision")
         mamboVision = DroneVision(mambo, is_bebop=False, buffer_size=30)
         userVision = UserVision(mamboVision)
-        mamboVision.set_user_callback_function(userVision.save_pictures, user_callback_args=None)
+        # mamboVision.set_user_callback_function(userVision.save_pictures, user_callback_args=None)
         success = mamboVision.open_video() #Open the video stream using ffmpeg for capturing and processing
         print("Success in opening vision is %s" % success)
 
-        if (success):
-            print("Vision successfully started!")
+        print("Vision successfully started!")
 
-            frame = mamboVision.get_latest_valid_picture()
-        
-            #here should be input to detect.py
-        
-            # run inference
-            res = run_inference_for_single_image(frame, sess, tensor_dict, image_tensor)
+        frame = mamboVision.get_latest_valid_picture()
+    
+        #here should be input to detect.py
+    
+        # run inference
+        res = run_inference_for_single_image(frame, sess, tensor_dict, image_tensor)
+        print("frame")
+        # view the bounding boxes:
+        cv2_visualize_results(frame, res, labels)
+        cv2.imshow('frame', frame)
 
-            # view the bounding boxes:
-            cv2_visualize_results(frame, res, labels)
-            cv2.imshow('frame', frame)
+        # done doing vision demo
+        print("Ending the sleep and vision")
+        mamboVision.close_video()
 
-            # done doing vision demo
-            print("Ending the sleep and vision")
-            mamboVision.close_video()
-
-            mambo.smart_sleep(5)
+        mambo.smart_sleep(5)
 
 
         print("disconnecting")
