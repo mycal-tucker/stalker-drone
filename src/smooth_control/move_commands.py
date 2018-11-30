@@ -16,7 +16,7 @@ def move(mambo, dx, dy, dz, dyaw, duration):
     thresh_pos = 0.2
     thresh_yaw = 5
     max_dist = 2
-    max_yaw = 360
+    max_yaw = 500
 
     roll = pitch = vertical_movement = yaw = 0
 

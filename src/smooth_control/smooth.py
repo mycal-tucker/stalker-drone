@@ -9,9 +9,63 @@ Output: Commands sent to the drone to follow the intermediate goals
 
 import numpy as np
 from scipy.interpolate import interp2d
-#from utils.drone_state import DroneState
+from utils.drone_state import DroneState
 from move_commands import *
 import sys
+
+
+def test_state_yaw_backward(mambo, dur):
+    d1 = DroneState()
+    d2 = DroneState(y = 0.33, x = 0.1, z = , yaw = 30)
+    d3 = DroneState(y = 0.66, x = 0.1, z = , yaw = 60)
+    #d4 = DroneState(y = -1, yaw = 90)
+    drone_states = [d1, d2, d3]
+
+    cinematic_waypoints = [DroneState(y = -1, z = , yaw = 90)]
+
+    for drone_state in drone_states:
+        smooth_gen(drone_state, cinematic_waypoints, dur)
+        mambo.smart_sleep(dur)
+
+
+
+def test_state_yaw_forward(mambo, dur):
+    d1 = DroneState()
+    d2 = DroneState(y = -0.33, x = 0.1, yaw = 30)
+    d3 = DroneState(y = -0.66, x = 0.1, yaw = 60)
+    #d4 = DroneState(y = -1, yaw = 90)
+    drone_states = [d1, d2, d3]
+
+    cinematic_waypoints = [DroneState(y = -1, yaw = 90)]
+
+    for drone_state in drone_states:
+        smooth_gen(drone_state, cinematic_waypoints, dur)
+        mambo.smart_sleep(dur)
+
+
+def test_state_forward(mambo, dur):
+    d1 = DroneState()
+    d2 = DroneState(y = -0.5)
+    d3 = DroneState(y = -1)
+    drone_states = [d1, d2, d3]
+
+    cinematic_waypoints = [DroneState(y = -1)]
+
+    for drone_state in drone_states:
+        smooth_gen(drone_state, cinematic_waypoints, dur)
+        mambo.smart_sleep(dur)
+
+
+
+def test_simple(mambo, dur):
+    move(mambo, dx=-0.1, dy=-0.5, dz=0, dyaw=90, duration=dur)
+    move_forward(mambo, 20, dur)
+    move_backward(mambo, 20, dur)
+    move_left(mambo, 20, dur)
+    move_right(mambo, 20, dur)
+    move_up(mambo, 20, dur)
+    move_down(mambo, 20, dur)
+    yaw(mambo, -90)
 
 
 def smooth_gen(drone_state, cinematic_waypoints, duration=1):
@@ -34,7 +88,7 @@ if __name__ == "__main__":
 
     # If you are using BLE: you will need to change this to the address of YOUR mambo
     # if you are using Wifi, this can be ignored
-    mamboAddr = "E0:14:F1:84:3D:CA"
+    mamboAddr = "E0:14:B1:35:3D:CB"  # "E0:14:F1:84:3D:CA"
 
     # make my mambo object
     # remember to set True/False for the wifi depending on if you are using the wifi or the BLE to connect
@@ -56,16 +110,12 @@ if __name__ == "__main__":
             mambo.safe_takeoff(5)
 
             if (mambo.sensors.flying_state != "emergency"):
-                dur = 1
+                dur = 0.5
 
-                move(mambo, dx=-0.1, dy=-0.5, dz=0, dyaw=90, duration=dur)
-                # move_forward(mambo, 20, dur)
-                # move_backward(mambo, 20, dur)
-                # move_left(mambo, 20, dur)
-                # move_right(mambo, 20, dur)
-                # move_up(mambo, 20, dur)
-                # move_down(mambo, 20, dur)
-                # yaw(mambo, -90)
+                test_state_yaw_backward(mambo, dur)
+                # test_state_yaw_forward(mambo, dur)
+                # test_state_forward(mambo, dur)
+                # test_simple(mambo, dur)
 
 
         except Exception as e: 
