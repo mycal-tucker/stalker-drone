@@ -42,6 +42,7 @@ MODEL         = 'ssdlite_mobilenet_v2_coco_2018_05_09/frozen_inference_graph.pb'
 LABELS        = 'mscoco_label_map.pbtxt'
 REPORT_TIMING = False
 
+
 def read_labels(labelfile):
     with open(labelfile, 'r') as fid:
         lines = fid.readlines()
@@ -132,24 +133,26 @@ if __name__ == "__main__":
                       tensor_name)
     image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
 
-    # begin processing the default camera feed for your device:
-    cap = cv2.VideoCapture(0)
-    while True:
-        ret, frame = cap.read()
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # run inference
-        res = run_inference_for_single_image(frame, sess, tensor_dict, image_tensor)
 
-        # view the bounding boxes:
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        cv2_visualize_results(frame, res, labels)
-        cv2.imshow('frame', frame)
+    # # begin processing the default camera feed for your device:
+    # cap = cv2.VideoCapture(0)
+    # while True:
+    #     ret, frame = cap.read()
+    #     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # quit if the user presses 'q' on the keyboard:
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    cap.release()
-    cv2.destroyAllWindows()
+    #     # run inference
+    #     res = run_inference_for_single_image(frame, sess, tensor_dict, image_tensor)
+
+    #     # view the bounding boxes:
+    #     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    #     cv2_visualize_results(frame, res, labels)
+    #     cv2.imshow('frame', frame)
+
+    #     # quit if the user presses 'q' on the keyboard:
+    #     if cv2.waitKey(1) & 0xFF == ord('q'):
+    #         break
+    # cap.release()
+    # cv2.destroyAllWindows()
 
 ## this example is partially based on code from tensorflow.org and Intel's ncappzoo

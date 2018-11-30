@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Nov  8 10:03:52 2018
-
-@author: mayanasr
-
-Source of the code: https://www.pyimagesearch.com/2015/11/09/pedestrian-detection-opencv/
-
-"""
-
 # import the necessary packages
 from __future__ import print_function
 from imutils.object_detection import non_max_suppression

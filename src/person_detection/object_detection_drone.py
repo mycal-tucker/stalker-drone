@@ -189,7 +189,7 @@ if __name__ == "__main__":
     success = mambo.connect(num_retries=3)
     print("connected: %s" % success)
 
-    if (success):
+    while (success):
         # get the state information
         print("sleeping")
         mambo.smart_sleep(1)
@@ -199,7 +199,7 @@ if __name__ == "__main__":
         print("Preparing to open vision")
         mamboVision = DroneVision(mambo, is_bebop=False, buffer_size=30)
         userVision = UserVision(mamboVision)
-        # mamboVision.set_user_callback_function(userVision.save_pictures, user_callback_args=None)
+        mamboVision.set_user_callback_function(userVision.save_pictures, user_callback_args=None)
         success = mamboVision.open_video() #Open the video stream using ffmpeg for capturing and processing
         print("Success in opening vision is %s" % success)
 
