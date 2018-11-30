@@ -15,13 +15,12 @@ import sys
 
 
 def test_state_yaw_backward(mambo, dur):
-    d1 = DroneState()
-    d2 = DroneState(y = 0.33, x = 0.1, z = , yaw = 30)
-    d3 = DroneState(y = 0.66, x = 0.1, z = , yaw = 60)
-    #d4 = DroneState(y = -1, yaw = 90)
+    d1 = DroneState(z=-1)
+    d2 = DroneState(y = 0.33, x = 0.1, z = -1.16, yaw = -30)
+    d3 = DroneState(y = 0.66, x = 0.1, z = -1.33, yaw = -60)
     drone_states = [d1, d2, d3]
 
-    cinematic_waypoints = [DroneState(y = -1, z = , yaw = 90)]
+    cinematic_waypoints = [DroneState(y = 1, z = -1.5, yaw = -90)]
 
     for drone_state in drone_states:
         smooth_gen(drone_state, cinematic_waypoints, dur)
@@ -54,7 +53,6 @@ def test_state_forward(mambo, dur):
     for drone_state in drone_states:
         smooth_gen(drone_state, cinematic_waypoints, dur)
         mambo.smart_sleep(dur)
-
 
 
 def test_simple(mambo, dur):
@@ -110,7 +108,7 @@ if __name__ == "__main__":
             mambo.safe_takeoff(5)
 
             if (mambo.sensors.flying_state != "emergency"):
-                dur = 0.5
+                dur = 1
 
                 test_state_yaw_backward(mambo, dur)
                 # test_state_yaw_forward(mambo, dur)
