@@ -8,11 +8,20 @@ Output: Commands sent to the drone to follow the intermediate goals
 """
 
 import numpy as np
-from scipy.interpolate import interp2d
 from utils.drone_state import DroneState
 from move_commands import *
 import sys
 
+
+def test_multiple_states(mambo, dur):
+    d1 = DroneState()
+    drone_states = [d1]
+
+    cinematic_waypoints = [DroneState(y = -1, z = -1.5, yaw = -75), DroneState(y = 1, z = 1.5, yaw = 75)]
+
+    for cinematic_waypoint in cinematic_waypoints:
+        smooth_gen(d1, cinematic_waypoint, dur)
+        mambo.smart_sleep(dur)
 
 def test_state_yaw_backward(mambo, dur):
     d1 = DroneState(z=-1)
@@ -110,7 +119,7 @@ if __name__ == "__main__":
             if (mambo.sensors.flying_state != "emergency"):
                 dur = 1
 
-                test_state_yaw_backward(mambo, dur)
+                test_multiple_states(mambo, dur)
                 # test_state_yaw_forward(mambo, dur)
                 # test_state_forward(mambo, dur)
                 # test_simple(mambo, dur)
