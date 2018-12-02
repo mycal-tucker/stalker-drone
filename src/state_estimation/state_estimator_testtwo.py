@@ -1,0 +1,325 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  2 10:48:00 2018
+
+@author: Rosemary
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  2 10:39:22 2018
+
+@author: Rosemary
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Nov 14 10:45:38 2018
+@author: Rosemary
+Source: https://gitlab.dke.univie.ac.at/omilab-education/cmke_drone/blob/f325ef456f157fc4bdda10219b282bbc0212fea7/src/pyparrot/Mambo.py
+"""
+
+#from pyparrot.Minidrone import Mambo
+#from pyparrot.DroneVision import DroneVision
+from pyparrot.networking.wifiConnection import WifiConnection
+from pyparrot.commandsandsensors.DroneCommandParser import DroneCommandParser
+from pyparrot.commandsandsensors.DroneSensorParser import DroneSensorParser
+#import cv2
+import time
+import math
+
+class MamboSensorsOne:
+    """
+    Store the mambo's last known sensor values
+    """
+
+    def __init__(self):
+
+        # default to full battery
+        self.battery = 100
+
+        # drone on the ground
+        self.flying_state = "landed"
+
+        # dictionary for extra sensors
+        self.sensors_dict = dict()
+
+        self.gun_id = 0
+        self.gun_state = None
+
+        self.claw_id = 0
+        self.claw_state = None
+
+        # new SDK sends speed, altitude, and quaternions
+        self.speed_x = 0
+        self.speed_y = 0
+        self.speed_z = 0
+        self.speed_ts = 0
+
+        # these are only available on wifi
+        self.altitude = -1
+        self.altitude_ts = 0
+
+        self.quaternion_w = 0
+        self.quaternion_x = 0
+        self.quaternion_y = 0
+        self.quaternion_z = 0
+        self.quaternion_ts = -1
+
+        # this is optionally set elsewhere
+        self.user_callback_function = None
+
+    def set_user_callback_function(self, function, args):
+        """
+        Sets the user callback function (called everytime the sensors are updated)
+        :param function: name of the user callback function
+        :param args: arguments (tuple) to the function
+        :return:
+        """
+        self.user_callback_function = function
+        self.user_callback_function_args = args
+
+    def update(self, name, value, sensor_enum):
+        """
+        Update the sensor
+        :param name: name of the sensor to update
+        :param value: new value for the sensor
+        :param sensor_enum: enum list for the sensors that use enums so that we can translate from numbers to strings
+        :return:
+        """
+        #print("updating sensor %s" % name)
+        #print(value)
+        if (name is None):
+            print("Error empty sensor")
+            return
+
+
+        if (name, "enum") in sensor_enum:
+            # grab the string value
+            if (value > len(sensor_enum[(name, "enum")])):
+                value = "UNKNOWN_ENUM_VALUE"
+            else:
+                enum_value = sensor_enum[(name, "enum")][value]
+                value = enum_value
+
+
+        # add it to the sensors
+        if (name == "BatteryStateChanged_battery_percent"):
+            self.battery = value
+        elif (name == "FlyingStateChanged_state"):
+            self.flying_state = value
+        elif (name == "ClawState_id"):
+            self.claw_id = value
+        elif (name == "ClawState_state"):
+            self.claw_state = value
+        elif (name == "GunState_id"):
+            self.gun_id = value
+        elif (name == "GunState_state"):
+            self.gun_state = value
+        elif (name == "DroneSpeed_speed_x"):
+            self.speed_x = value
+        elif (name == "DroneSpeed_speed_y"):
+            self.speed_y = value
+        elif (name == "DroneSpeed_speed_z"):
+            self.speed_z = value
+        elif (name == "DroneSpeed_ts"):
+            self.speed_ts = value
+        elif (name == "DroneAltitude_altitude"):
+            self.altitude = value
+        elif (name == "DroneAltitude_ts"):
+            self.altitude_ts = value
+        elif (name == "DroneQuaternion_q_w"):
+            self.quaternion_w = value
+        elif (name == "DroneQuaternion_q_x"):
+            self.quaternion_x = value
+        elif (name == "DroneQuaternion_q_y"):
+            self.quaternion_y = value
+        elif (name == "DroneQuaternion_q_z"):
+            self.quaternion_z = value
+        elif (name == "DroneQuaternion_ts"):
+            self.quaternion_ts = value
+        else:
+            #print "new sensor - add me to the struct but saving in the dict for now"
+            self.sensors_dict[name] = value
+
+        # call the user callback if it isn't None
+        if (self.user_callback_function is not None):
+            self.user_callback_function(self.user_callback_function_args)
+    
+    def get_velocity(self):
+        self.vel_x = self.sensors.speed_x
+        self.vel_y = self.sensors.speed_y
+        self.vel_z = self.sensors.speed_z
+        
+        return self.vel_x, self.vel_y, self.vel_z
+    
+    def get_position(self):  
+        self.firstvel_x = self.sensors.speed_x
+        self.firstvel_y = self.sensors.speed_y
+        self.firstvel_z = self.sensors.speed_z
+        
+        MamboStateOne.ask_for_state_update(self)
+        
+        self.pos_x = (self.firstvel_x - self.sensors.speed_x) * 0.5
+        self.pos_y = (self.firstvel_y - self.sensors.speed_y) * 0.5
+        self.pos_z = (self.firstvel_z - self.sensors.speed_z) * 0.5
+        
+        
+        return self.pos_x, self.pos_y, self.pos_z
+    
+    
+    def get_attitude(self):
+        self.q1 = self.sensors.quaternion_w
+        self.q2 = self.sensors.quaternion_x
+        self.q3 = self.sensors.quaternion_y
+        self.q4 = self.sensors.quaternion_z
+        
+        self.roll, self.pitch, self.yaw = MamboStateOne.quaternion_to_euler_angle_test(self, self.q1, self.q2, self.q3, self.q4)
+
+        return self.roll, self.pitch, self.yaw
+    
+    def get_attitude_rate(self):
+        self.firstq1 = self.sensors.quaternion_w
+        self.firstq2 = self.sensors.quaternion_x
+        self.firstq3 = self.sensors.quaternion_y
+        self.firstq4 = self.sensors.quaternion_z
+        
+        self.firstroll, self.firstpitch, self.firstyaw = MamboStateOne.quaternion_to_euler_angle_test(self, self.firstq1, self.firstq2, self.firstq3, self.firstq4)
+        
+        MamboStateOne.ask_for_state_update(self)
+        
+        self.newq1 = self.sensors.quaternion_w
+        self.newq2 = self.sensors.quaternion_x
+        self.newq3 = self.sensors.quaternion_y
+        self.newq4 = self.sensors.quaternion_z
+        
+        self.newroll, self.newpitch, self.newyaw = MamboStateOne.quaternion_to_euler_angle_test(self, self.newq1, self.newq2, self.newq3, self.newq4)
+        
+        self.roll_rate = (self.firstroll - self.newroll) * 0.5
+        self.pitch_rate = (self.firstpitch - self.newpitch) * 0.5
+        self.yaw_rate = (self.firstyaw - self.newyaw) * 0.5
+        
+        return self.roll_rate, self.pitch_rate, self.yaw_rate
+
+
+class MamboStateOne:
+    def __init__(self, address, use_wifi=False):
+        """
+        Initialize with its BLE address - if you don't know the address, call findMambo
+        and that will discover it for you.
+        You can also connect to the wifi on the FPV camera.  Do not use this if the camera is not connected.  Also,
+        ensure you have connected your machine to the wifi on the camera before attempting this or it will not work.
+        :param address: unique address for this mambo
+        :param use_wifi: set to True to connect with wifi as well as the BLE
+        """
+        self.address = address
+        self.use_wifi = use_wifi
+        if (use_wifi):
+            self.drone_connection = WifiConnection(self, drone_type="Mambo")
+        else:
+            if (BLEAvailable):
+                self.drone_connection = BLEConnection(address, self)
+            else:
+                self.drone_connection = None
+                color_print("ERROR: you are trying to use a BLE connection on a system that doesn't have BLE installed.", "ERROR")
+                return
+
+        # intialize the command parser
+        self.command_parser = DroneCommandParser()
+
+        # initialize the sensors and the parser
+        self.sensors = MamboSensorsOne()
+        self.sensor_parser = DroneSensorParser(drone_type="Mambo")
+
+    def set_user_sensor_callback(self, function, args):
+        """
+        Set the (optional) user callback function for sensors.  Every time a sensor
+        is updated, it calls this function.
+        :param function: name of the function
+        :param args: tuple of arguments to the function
+        :return: nothing
+        """
+        self.sensors.set_user_callback_function(function, args)
+
+    def update_sensors(self, data_type, buffer_id, sequence_number, raw_data, ack):
+        """
+        Update the sensors (called via the wifi or ble connection)
+        :param data: raw data packet that needs to be parsed
+        :param ack: True if this packet needs to be ack'd and False otherwise
+        """
+
+        sensor_list = self.sensor_parser.extract_sensor_values(raw_data)
+        if (sensor_list is not None):
+            for sensor in sensor_list:
+                (sensor_name, sensor_value, sensor_enum, header_tuple) = sensor
+                if (sensor_name is not None):
+                    self.sensors.update(sensor_name, sensor_value, sensor_enum)
+                    # print(self.sensors)
+                else:
+                    color_print(
+                        "data type %d buffer id %d sequence number %d" % (data_type, buffer_id, sequence_number),
+                        "WARN")
+                    color_print("This sensor is missing (likely because we don't need it)", "WARN")
+
+        if (ack):
+            self.drone_connection.ack_packet(buffer_id, sequence_number)
+            
+        #return self.sensors
+
+
+
+    def ask_for_state_update(self):
+        """
+        Ask for a full state update (likely this should never be used but it can be called if you want to see
+        everything the mambo is storing)
+        :return: nothing but it will eventually fill the MamboSensors with all of the state variables as they arrive
+        """
+        command_tuple = self.command_parser.get_command_tuple("common", "Common", "AllStates")
+        return self.drone_connection.send_noparam_command_packet_ack(command_tuple)
+    
+    def quaternion_to_euler_angle_test(self, w, x, y, z):
+        """
+        This code is directly from:
+        https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+        :param x:
+        :param y:
+        :param z:
+        :return:
+        """
+        ysqr = y * y
+
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + ysqr)
+        X = math.degrees(math.atan2(t0, t1))
+
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        Y = math.degrees(math.asin(t2))
+
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (ysqr + z * z)
+        Z = math.degrees(math.atan2(t3, t4))
+
+        return X, Y, Z
+    
+    
+    def current_drone_state(self):
+        current_pos = MamboSensorsOne.get_position(self)
+        current_vel = MamboSensorsOne.get_velocity(self)
+        current_att = MamboSensorsOne.get_attitude(self)
+        current_att_rate = MamboSensorsOne.get_attitude_rate(self)
+        
+        #current_ts = self.quaternion_ts
+        currentstate = current_pos, current_vel, current_att, current_att_rate
+        
+        return currentstate
+    
+    def currenttimestep(self):
+        #timestepnow = MamboSensors.get_sensor_time(self)
+        testtime = time.time()
+        
+        return testtime
