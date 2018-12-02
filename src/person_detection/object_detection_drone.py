@@ -73,16 +73,20 @@ class UserVision:
         self.index = 0
         self.vision = vision
 
-    # def save_pictures(self, args):
-    # print("in save pictures on image %d " % self.index)
+    def save_pictures(self, args):
+        print("in save pictures on image %d " % self.index)
 
-    # img = self.vision.get_latest_valid_picture()
+        img = self.vision.get_latest_valid_picture()
 
-    # if (img is not None):
-    #     filename = "test_image_%06d.png" % self.index
-    #     cv2.imwrite(filename, img)
-    #     self.index +=1
-    #     #print(self.index)
+        if img is not None:
+            filename = "test_image_%06d.png" % self.index
+            cv2.imwrite(filename, img)
+            self.index += 1
+            # Save another copy of the same image to a hardcoded filename, which
+            # we'll use as the latest image
+            magic_filename = "latest_image.png"
+            cv2.imwrite(magic_filename, img)
+            #print(self.index)
             
 MODEL         = 'ssdlite_mobilenet_v2_coco_2018_05_09/frozen_inference_graph.pb'
 LABELS        = 'mscoco_label_map.pbtxt'

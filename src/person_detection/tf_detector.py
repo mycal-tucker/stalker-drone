@@ -10,9 +10,11 @@ from utils.bounding_box import BoundingBox
 
 
 class TFDetector:
-    def __init__(self):
-        MODEL = 'ssdlite_mobilenet_v2_coco_2018_05_09/frozen_inference_graph.pb'
-        LABELS = 'mscoco_label_map.pbtxt'
+    def __init__(self, model_filepath='ssdlite_mobilenet_v2_coco_2018_05_09/frozen_inference_graph.pb',
+                 label_filepath='mscoco_label_map.pbtxt'):
+        print("Creating TFDetector")
+        MODEL = model_filepath
+        LABELS = label_filepath
         REPORT_TIMING = False
 
         # read the model graph and labels from disk:
@@ -63,6 +65,11 @@ class TFDetector:
 
             if visualize:
                 # Display the image and the overlayed bounding box
+                if bb is None:
+                    print("No bounding box to visualize.")
+                    cv2.imshow("image", image)
+                    return bb
+
                 center_x, center_y = bb.centroid
                 width, height = bb.dimensions
 
@@ -93,7 +100,7 @@ class TFDetector:
                 cv2.putText(image, label_text, (label_left, label_bottom), cv2.FONT_HERSHEY_SIMPLEX, 1, label_text_color, 2,cv2.LINE_AA)
             
                 cv2.imshow("image", image)
-                cv2.waitKey(0)
+                # cv2.waitKey(0)
             return bb
 
 
