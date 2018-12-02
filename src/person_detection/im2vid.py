@@ -13,10 +13,10 @@ import os
 from os.path import isfile, join
 
 class im2vid:
-    def convert_frames_to_video(pathIn = './data/', pathOut= 'droneVideo.avi', fps= 25.0):
-        #pathIn is the path to the saved images
-        #pathOut is the path to the video you are creating
-        #fps is the frame rate of the video you are creating
+    def convert_frames_to_video(pathIn = './images/', pathOut= 'droneVideo.avi', fps= 30.0):
+        #pathIn is the path to the folder with saved images (default ./images)
+        #pathOut is the path to the video you are creating (default droneVideo.avi)
+        #fps is the frame rate of the video you are creating (default 30 frames/sec)
         frame_array = []
         files = [f for f in os.listdir(pathIn) if isfile(join(pathIn, f))]
  
