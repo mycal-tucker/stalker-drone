@@ -92,6 +92,7 @@ def smooth_gen(drone_state, cinematic_waypoints, duration=1):
 
 if __name__ == "__main__":
     from pyparrot.Minidrone import Mambo
+    #from state_estimation.state_estimator_testtwo import MamboStateOne
 
     # If you are using BLE: you will need to change this to the address of YOUR mambo
     # if you are using Wifi, this can be ignored
@@ -99,7 +100,9 @@ if __name__ == "__main__":
 
     # make my mambo object
     # remember to set True/False for the wifi depending on if you are using the wifi or the BLE to connect
+
     mambo = Mambo(mamboAddr, use_wifi=False)
+    #dronestates = MamboStateOne(mamboAddr, use_wifi=True)
 
     print("trying to connect")
     success = mambo.connect(num_retries=3)
@@ -116,10 +119,17 @@ if __name__ == "__main__":
             print("taking off!")
             mambo.safe_takeoff(5)
 
+            ##
+            # current_dronestate = dronestates.current_drone_state()
+            # timetest = dronestates.currenttimestep()
+            # print("Time step is now: ", timetest)
+            # print("Current drone state in while loop is: ", current_dronestate)
+            ##
+
             if (mambo.sensors.flying_state != "emergency"):
                 dur = 1
 
-                test_multiple_states(mambo, dur)
+                # test_multiple_states(mambo, dur)
                 # test_state_yaw_forward(mambo, dur)
                 # test_state_forward(mambo, dur)
                 # test_simple(mambo, dur)
