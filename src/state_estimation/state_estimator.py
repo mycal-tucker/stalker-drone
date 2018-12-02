@@ -16,7 +16,7 @@ import cv2
 import time
 import math
 
-class MamboSensors:
+class MamboSensorsOne:
     """
     Store the mambo's last known sensor values
     """
@@ -295,7 +295,7 @@ class MamboState:
         self.command_parser = DroneCommandParser()
 
         # initialize the sensors and the parser
-        self.sensors = MamboSensors()
+        self.sensors = MamboSensorsOne()
         self.sensor_parser = DroneSensorParser(drone_type="Mambo")
 
     def set_user_sensor_callback(self, function, args):
