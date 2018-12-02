@@ -15,13 +15,13 @@ import sys
 
 def test_multiple_states(mambo, dur):
     d1 = DroneState()
-    drone_states = [d1]
 
-    cinematic_waypoints = [DroneState(y = -1, z = -1.5, yaw = -75), DroneState(y = 1, z = 1.5, yaw = 75)]
+    cinematic_waypoints = [DroneState(y = -1, z = -1, yaw = 90), DroneState(y = 1, z = 1, yaw = -90)]
 
     for cinematic_waypoint in cinematic_waypoints:
+        cinematic_waypoint = [cinematic_waypoint]
         smooth_gen(d1, cinematic_waypoint, dur)
-        mambo.smart_sleep(dur)
+        mambo.smart_sleep(dur+0.5)
 
 def test_state_yaw_backward(mambo, dur):
     d1 = DroneState(z=-1)
@@ -84,8 +84,8 @@ def smooth_gen(drone_state, cinematic_waypoints, duration=1):
     dz = goal.z - drone_state.z
     dyaw = goal.yaw - drone_state.yaw
 
-    dx = Dx*np.sin(np.deg2rad(-dyaw))
-    dy = Dy*np.cos(np.deg2rad(-dyaw))
+    dx = Dx*np.sin(np.deg2rad(-drone_state.yaw))
+    dy = Dy*np.cos(np.deg2rad(-drone_state.yaw))
 
     move(mambo, dx=dx, dy=dy, dz=dz, dyaw=dyaw, duration=duration)
 

@@ -13,6 +13,7 @@ def interp(val, max_value):
 
 
 def move(mambo, dx, dy, dz, dyaw, duration):
+
     thresh_pos = 0.2
     thresh_yaw = 5
     dist_ref = 2
@@ -41,7 +42,6 @@ def move(mambo, dx, dy, dz, dyaw, duration):
 
 def move_forward(mambo, percent, duration):
     print("move forward")
-    #print("flying state is %s" % mambo.sensors.flying_state)
     mambo.fly_direct(roll=0, pitch=percent, yaw=0, vertical_movement=0, duration=duration)
     mambo.smart_sleep(duration)
 
