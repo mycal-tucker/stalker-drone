@@ -15,22 +15,26 @@ def interp(val, max_value):
 def move(mambo, dx, dy, dz, dyaw, duration):
     thresh_pos = 0.2
     thresh_yaw = 5
-    max_dist = 2
-    max_yaw = 500
+    dist_ref = 2
+    yaw_ref = 400
+
+    max_yaw = 90
+    if np.abs(dyaw) > max_yaw:
+        dyaw = np.sign(dyaw)*max_yaw
 
     roll = pitch = vertical_movement = yaw = 0
 
     if np.abs(dx) > thresh_pos:
-        roll = np.sign(dx)*interp(dx, max_dist)
+        roll = np.sign(dx)*interp(dx, dist_ref)
 
     if np.abs(dy) > thresh_pos:
-        pitch = -np.sign(dy)*interp(dy, max_dist)
+        pitch = -np.sign(dy)*interp(dy, dist_ref)
 
     if np.abs(dz) > thresh_pos:
-        vertical_movement = -np.sign(dz)*interp(dz, max_dist)
+        vertical_movement = -np.sign(dz)*interp(dz, dist_ref)
 
     if np.abs(dyaw) > thresh_yaw:
-        yaw = np.sign(dyaw)*interp(dyaw, max_yaw)
+        yaw = np.sign(dyaw)*interp(dyaw, yaw_ref)
 
     mambo.fly_direct(roll=roll, pitch=pitch, yaw=yaw, vertical_movement=vertical_movement, duration=duration)
 

@@ -16,11 +16,11 @@ import sys
 
 def test_state_yaw_backward(mambo, dur):
     d1 = DroneState(z=-1)
-    d2 = DroneState(y = 0.33, x = 0.1, z = -1.16, yaw = -30)
-    d3 = DroneState(y = 0.66, x = 0.1, z = -1.33, yaw = -60)
+    d2 = DroneState(y = 0.33, x = 0.3, z = -1.16, yaw = -25)
+    d3 = DroneState(y = 0.66, x = 0.3, z = -1.33, yaw = -50)
     drone_states = [d1, d2, d3]
 
-    cinematic_waypoints = [DroneState(y = 1, z = -1.5, yaw = -90)]
+    cinematic_waypoints = [DroneState(y = 1, z = -1.5, yaw = -75)]
 
     for drone_state in drone_states:
         smooth_gen(drone_state, cinematic_waypoints, dur)
