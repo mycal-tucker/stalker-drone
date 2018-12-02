@@ -7,8 +7,11 @@ Created on Wed Nov 14 10:45:38 2018
 Source: https://gitlab.dke.univie.ac.at/omilab-education/cmke_drone/blob/f325ef456f157fc4bdda10219b282bbc0212fea7/src/pyparrot/Mambo.py
 """
 
-from pyparrot.Minidrone import Mambo
-from pyparrot.Mambo import DroneVision
+#from pyparrot.Minidrone import Mambo
+#from pyparrot.DroneVision import DroneVision
+from pyparrot.networking.wifiConnection import WifiConnection
+from pyparrot.commandsandsensors.DroneCommandParser import DroneCommandParser
+from pyparrot.commandsandsensors.DroneSensorParser import DroneSensorParser
 import cv2
 import time
 import math
@@ -178,6 +181,70 @@ class MamboSensors:
         Z = math.degrees(math.atan2(t3, t4))
 
         return X, Y, Z
+    
+    def get_velocity(self):
+        self.vel_x = self.sensors.speed_x
+        self.vel_y = self.sensors.speed_y
+        self.vel_z = self.sensors.speed_z
+        
+        return self.vel_x, self.vel_y, self.vel_z
+    
+    def get_position(self):  
+        self.firstvel_x = self.sensors.speed_x
+        self.firstvel_y = self.sensors.speed_y
+        self.firstvel_z = self.sensors.speed_z
+        
+        MamboState.ask_for_state_update(self)
+        
+        self.pos_x = (self.firstvel_x - self.sensors.speed_x) * 0.5
+        self.pos_y = (self.firstvel_y - self.sensors.speed_y) * 0.5
+        self.pos_z = (self.firstvel_z - self.sensors.speed_z) * 0.5
+        
+        
+        return self.pos_x, self.pos_y, self.pos_z
+    
+    
+    def get_attitude(self):
+        self.q1 = self.sensors.quaternion_w
+        self.q2 = self.sensors.quaternion_x
+        self.q3 = self.sensors.quaternion_y
+        self.q4 = self.sensors.quaternion_z
+        
+        self.roll, self.pitch, self.yaw = MamboState.quaternion_to_euler_angle_test(self, self.q1, self.q2, self.q3, self.q4)
+
+        return self.roll, self.pitch, self.yaw
+    
+    def get_attitude_rate(self):
+        self.firstq1 = self.sensors.quaternion_w
+        self.firstq2 = self.sensors.quaternion_x
+        self.firstq3 = self.sensors.quaternion_y
+        self.firstq4 = self.sensors.quaternion_z
+        
+        self.firstroll, self.firstpitch, self.firstyaw = MamboState.quaternion_to_euler_angle_test(self, self.firstq1, self.firstq2, self.firstq3, self.firstq4)
+        
+        MamboState.ask_for_state_update(self)
+        
+        self.newq1 = self.sensors.quaternion_w
+        self.newq2 = self.sensors.quaternion_x
+        self.newq3 = self.sensors.quaternion_y
+        self.newq4 = self.sensors.quaternion_z
+        
+        self.newroll, self.newpitch, self.newyaw = MamboState.quaternion_to_euler_angle_test(self, self.newq1, self.newq2, self.newq3, self.newq4)
+        
+        self.roll_rate = (self.firstroll - self.newroll) * 0.5
+        self.pitch_rate = (self.firstpitch - self.newpitch) * 0.5
+        self.yaw_rate = (self.firstyaw - self.newyaw) * 0.5
+        
+        return self.roll_rate, self.pitch_rate, self.yaw_rate
+
+        
+    #def get_sensor_time(self):
+        #self.sensor_time_step = self.quaternion_ts
+        #trytime = time.time()
+        #self.sensor_time = self.sensors.quaternion_ts
+        #self.tryagain = self.sensor_time
+        #trytime = time.time()
+        #return self.sensor_time
 
     def __str__(self):
         """
@@ -269,6 +336,7 @@ class MamboState:
         #return self.sensors
 
 
+            
     def connect(self, num_retries):
         """
         Connects to the drone and re-tries in case of failure the specified number of times.  Seamlessly
@@ -295,6 +363,16 @@ class MamboState:
         :return: void
         """
         self.drone_connection.disconnect()
+          
+        
+    def smart_sleep(self, timeout):
+        """
+        Don't call time.sleep directly as it will mess up BLE and miss WIFI packets!  Use this
+        which handles packets received while sleeping
+
+        :param timeout: number of seconds to sleep
+        """
+        self.drone_connection.smart_sleep(timeout)
 
     def ask_for_state_update(self):
         """
@@ -306,40 +384,51 @@ class MamboState:
         command_tuple = self.command_parser.get_command_tuple("common", "Common", "AllStates")
         return self.drone_connection.send_noparam_command_packet_ack(command_tuple)
     
-    def get_position(self):
-        #NOTE: have velocities, not positions in here right now
-        self.pos_x = self.sensors.speed_x
-        self.pos_y = self.sensors.speed_y
-        self.pos_z = self.sensors.speed_z
-        
-        return self.pos_x, self.pos_y, self.pos_z
-    
-    def get_velocity(self):
-        self.vel_x = self.sensors.speed_x
-        self.vel_y = self.sensors.speed_y
-        self.vel_z = self.sensors.speed_z
-        
-        return self.vel_x, self.vel_y, self.vel_z
-    
-    def get_attitude(self):
-        q1 = self.sensors.quaternion_w
-        q2 = self.sensors.quaternion_x
-        q3 = self.sensors.quaternion_y
-        q4 = self.sensors.quaternion_z
-        
-        self.roll, self.pitch, self.yaw = MamboSensors.quaternion_to_euler_angle(q1, q2, q3, q4)
+    def quaternion_to_euler_angle_test(self, w, x, y, z):
+        """
+        This code is directly from:
 
-        return self.roll, self.pitch, self.yaw
+        https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+
+        :param x:
+        :param y:
+        :param z:
+        :return:
+        """
+        ysqr = y * y
+
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + ysqr)
+        X = math.degrees(math.atan2(t0, t1))
+
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        Y = math.degrees(math.asin(t2))
+
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (ysqr + z * z)
+        Z = math.degrees(math.atan2(t3, t4))
+
+        return X, Y, Z
+    
     
     def current_drone_state(self):
-        current_pos = self.pos_x, self.pos_y, self.pos_z
-        current_vel = self.vel_x, self.vel_y, self.vel_z
-        current_att = self.roll, self.pitch, self.yaw
-        current_ts = self.quaternion_ts
-        currentstate = current_pos, current_vel, current_att, current_ts
+        current_pos = MamboSensors.get_position(self)
+        current_vel = MamboSensors.get_velocity(self)
+        current_att = MamboSensors.get_attitude(self)
+        current_att_rate = MamboSensors.get_attitude_rate(self)
+        
+        #current_ts = self.quaternion_ts
+        currentstate = current_pos, current_vel, current_att, current_att_rate
         
         return currentstate
     
+    def currenttimestep(self):
+        #timestepnow = MamboSensors.get_sensor_time(self)
+        testtime = time.time()
+        
+        return testtime
     
 
 
