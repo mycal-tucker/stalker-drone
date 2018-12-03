@@ -30,3 +30,12 @@ class DroneState:
 
     def get_uncertainty(self):
         return self.uncertainty
+    
+    def __str__(self):
+        my_str = "x: ", str(self.x)
+        my_str += "y: ", str(self.y)
+        my_str += "z: ", str(self.z)
+        my_str += "yaw: ", str(self.yaw)
+        
+        return my_str
+    
