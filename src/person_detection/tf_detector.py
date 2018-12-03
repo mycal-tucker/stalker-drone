@@ -100,8 +100,8 @@ class TFDetector:
                 cv2.putText(image, label_text, (label_left, label_bottom), cv2.FONT_HERSHEY_SIMPLEX, 1, label_text_color, 2,cv2.LINE_AA)
             
                 cv2.imshow("image", image)
-                # cv2.waitKey(0)
-            return bb
+                # cv2.waitKey(0) #Uncomment to cv2 show image
+            return bb 
 
 
 
@@ -130,10 +130,10 @@ class TFDetector:
                     return bb
 
 if __name__=='__main__':
-    print("hello world2")
-    my_detector = TFDetector()
-    loaded_image = cv2.imread('../../data/thi.png')
-    detect_bb = my_detector.detect_bounding_box(loaded_image, visualize=True)
-    print(detect_bb)
+    # print("hello world2")
+    # my_detector = TFDetector()
+    # loaded_image = cv2.imread('../../data/thi.png')
+    # detect_bb = my_detector.detect_bounding_box(loaded_image, visualize=True)
+    # print(detect_bb)
 
     
