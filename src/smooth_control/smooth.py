@@ -7,10 +7,10 @@ Input: List of (goal, time)
 Output: Commands sent to the drone to follow the intermediate goals
 """
 
-import numpy as np
 from utils.drone_state import DroneState
-from move_commands import *
+from smooth_control.move_commands import *
 import sys
+from state_estimation.new_state_estimator import NewStateEstimator
 
 
 def test_multiple_states(mambo, dur):
@@ -51,17 +51,11 @@ def test_state_yaw_forward(mambo, dur):
         mambo.smart_sleep(dur)
 
 
-def test_state_forward(mambo, dur):
-    d1 = DroneState()
-    d2 = DroneState(y = -0.5)
-    d3 = DroneState(y = -1)
-    drone_states = [d1, d2, d3]
-
-    cinematic_waypoints = [DroneState(y = -1)]
-
-    for drone_state in drone_states:
-        smooth_gen(drone_state, cinematic_waypoints, dur)
-        mambo.smart_sleep(dur)
+def test_state_forward(mambo, dur, current_state):
+    d1 = current_state
+    cinematic_waypoints = [DroneState(y=-1)]
+    smooth_gen(d1, cinematic_waypoints, dur)
+    mambo.smart_sleep(dur + 0.5)
 
 
 def test_simple(mambo, dur):
@@ -101,12 +95,14 @@ if __name__ == "__main__":
     # make my mambo object
     # remember to set True/False for the wifi depending on if you are using the wifi or the BLE to connect
 
-    mambo = Mambo(mamboAddr, use_wifi=False)
-    #dronestates = MamboStateOne(mamboAddr, use_wifi=True)
-
+    mambo = Mambo(mamboAddr, use_wifi=True)
     print("trying to connect")
     success = mambo.connect(num_retries=3)
     print("connected: %s" % success)
+
+    state_estimator = NewStateEstimator(mambo)
+    #dronestates = MamboStateOne(mamboAddr, use_wifi=True)
+
 
     if (success):
         try:
@@ -126,12 +122,14 @@ if __name__ == "__main__":
             # print("Current drone state in while loop is: ", current_dronestate)
             ##
 
-            if (mambo.sensors.flying_state != "emergency"):
+            if mambo.sensors.flying_state != "emergency":
                 dur = 1
 
+                estimated_drone_state, time_of_estimate = state_estimator.get_current_drone_state()
+                print("Current state ", estimated_drone_state)
                 # test_multiple_states(mambo, dur)
                 # test_state_yaw_forward(mambo, dur)
-                # test_state_forward(mambo, dur)
+                test_state_forward(mambo, dur, estimated_drone_state)
                 # test_simple(mambo, dur)
 
 
