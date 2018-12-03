@@ -1,12 +1,10 @@
 from cinematic_waypoints.waypoint_generator.waypoint_generator_abc import WaypointGenerator
 from utils.drone_state import DroneState
-import numpy as np
 
 
 # WaypointGenerator object that only allows the drone to yaw in place.
 class YawWaypointGenerator(WaypointGenerator):
-    def __init__(self, target_centroid_x=20):
-        # FIXME: almost certainly wrong. Needs to be calibrated.
+    def __init__(self, target_centroid_x=320):  # Images are 640 pixels across
         # This should correspond to the x value of a pixel right in the middle of a photo.
         self.target_centroid_x = target_centroid_x
         # Parameter for gain for how quickly the drone should yaw.

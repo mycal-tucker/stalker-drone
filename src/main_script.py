@@ -1,5 +1,6 @@
 from cinematic_waypoints.cinematic_controller import CinematicController
 from cinematic_waypoints.waypoint_generator.ngon_waypoint_generator import NGonWaypointGenerator
+from cinematic_waypoints.waypoint_generator.yaw_waypoint_generator import YawWaypointGenerator
 from person_detection.image_saver import ImageSaver
 from person_detection.tf_detector import TFDetector
 from state_estimation.new_state_estimator import NewStateEstimator
@@ -16,7 +17,8 @@ from pyparrot.DroneVision import DroneVision
 # 4) Create a smooth trajectory through the waypoints.
 # 5) Command the drone to follow the trajectory.
 
-waypoint_generator = NGonWaypointGenerator(n=4)
+# waypoint_generator = NGonWaypointGenerator(n=4)
+waypoint_generator = YawWaypointGenerator()
 cinematic_controller = CinematicController(waypoint_generator=waypoint_generator)
 
 mamboAddr = "e0:14:d0:63:3d:d0"  # Doesn't matter
