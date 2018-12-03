@@ -16,8 +16,10 @@ Output: Commands sent to the drone to follow the intermediate goals
 """
 
 import numpy as np
-from pyparrot.drone_state import DroneState
-from pyparrot.move_commands import *
+# from pyparrot.drone_state import DroneState
+# from pyparrot.move_commands import *
+from utils.drone_state import DroneState
+from smooth_control.move_commands import *
 import sys
 from pyparrot.Minidrone import Mambo
 from pyparrot.Minidrone import MinidroneSensors
