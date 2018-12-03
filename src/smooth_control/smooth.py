@@ -11,6 +11,7 @@ from utils.drone_state import DroneState
 from smooth_control.move_commands import *
 import sys
 from state_estimation.new_state_estimator import NewStateEstimator
+from smooth_controller import SmoothController
 
 
 def test_multiple_states(mambo, dur):
@@ -36,7 +37,6 @@ def test_state_yaw_backward(mambo, dur):
         mambo.smart_sleep(dur)
 
 
-
 def test_state_yaw_forward(mambo, dur):
     d1 = DroneState()
     d2 = DroneState(y = -0.33, x = 0.1, yaw = 30)
@@ -51,11 +51,10 @@ def test_state_yaw_forward(mambo, dur):
         mambo.smart_sleep(dur)
 
 
-def test_state_forward(mambo, dur, current_state):
-    d1 = current_state
+def test_state_forward(controller, dur):
     cinematic_waypoints = [DroneState(y=-1)]
-    smooth_gen(d1, cinematic_waypoints, dur)
-    mambo.smart_sleep(dur + 0.5)
+    controller.smooth_gen(cinematic_waypoints, dur)
+    mambo.smart_sleep(dur)
 
 
 def test_simple(mambo, dur):
@@ -69,19 +68,19 @@ def test_simple(mambo, dur):
     yaw(mambo, -90)
 
 
-def smooth_gen(drone_state, cinematic_waypoints, duration=1):
-    # list of drone states
-    goal = cinematic_waypoints[0]
+# def smooth_gen(drone_state, cinematic_waypoints, duration=1):
+#     # list of drone states
+#     goal = cinematic_waypoints[0]
 
-    Dx = goal.x - drone_state.x
-    Dy = goal.y - drone_state.y
-    dz = goal.z - drone_state.z
-    dyaw = goal.yaw - drone_state.yaw
+#     Dx = goal.x - drone_state.x
+#     Dy = goal.y - drone_state.y
+#     dz = goal.z - drone_state.z
+#     dyaw = goal.yaw - drone_state.yaw
 
-    dx = Dx*np.sin(np.deg2rad(-drone_state.yaw))
-    dy = Dy*np.cos(np.deg2rad(-drone_state.yaw))
+#     dx = Dx*np.sin(np.deg2rad(-drone_state.yaw))
+#     dy = Dy*np.cos(np.deg2rad(-drone_state.yaw))
 
-    move(mambo, dx=dx, dy=dy, dz=dz, dyaw=dyaw, duration=duration)
+#     move(mambo, dx=dx, dy=dy, dz=dz, dyaw=dyaw, duration=duration)
 
 
 if __name__ == "__main__":
@@ -115,21 +114,15 @@ if __name__ == "__main__":
             print("taking off!")
             mambo.safe_takeoff(5)
 
-            ##
-            # current_dronestate = dronestates.current_drone_state()
-            # timetest = dronestates.currenttimestep()
-            # print("Time step is now: ", timetest)
-            # print("Current drone state in while loop is: ", current_dronestate)
-            ##
 
             if mambo.sensors.flying_state != "emergency":
-                dur = 1
+                dur = 0.5  # state estimator update period
 
-                estimated_drone_state, time_of_estimate = state_estimator.get_current_drone_state()
-                print("Current state ", estimated_drone_state)
+                controller = SmoothController(mambo, state_estimator)
+
                 # test_multiple_states(mambo, dur)
                 # test_state_yaw_forward(mambo, dur)
-                test_state_forward(mambo, dur, estimated_drone_state)
+                test_state_forward(controller, dur)
                 # test_simple(mambo, dur)
 
 
