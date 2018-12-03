@@ -47,11 +47,14 @@ while not done:
         # 1) Read an image from the drone camera and create a bounding box of the humans.
         latest_image = image_saver.get_latest_image()  # FIXME: this is not returning the latest image.
         bounding_boxes = tf_detector.detect_bounding_box(latest_image, visualize=True)
-        print("Got these many bounding boxes:", len(bounding_boxes))
         print(bounding_boxes)
+        if bounding_boxes is not None:
+            print("Got these many bounding boxes:", len(bounding_boxes))
+        else:
+            print("No bounding boxes.")
 
         # 2) Read the current state of the drone.
-        drone_state = state_estimator.get_current_drone_state()
+        drone_state, _ = state_estimator.get_current_drone_state()  # Ignore second argumet because it's just a time.
         print("Current state is ", drone_state)
         # 3) Create cinematic waypoints for the drone to fly to.
         cinematic_controller.update_latest_bbs(bounding_boxes)

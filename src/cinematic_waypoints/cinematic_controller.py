@@ -126,6 +126,8 @@ class CinematicController:
     def generate_waypoints(self):
         if self.smoothed_bounding_box is None or self.latest_drone_state is None:
             print("Warning: asked to generate waypoints, but some of the current states are None.")
+            print("Bounding box: ", self.smoothed_bounding_box)
+            print("Latest state: ", self.latest_drone_state)
         if self.cinematic_waypoints is None:
             self.cinematic_waypoints = self.waypoint_generator.generate_waypoints(self.smoothed_bounding_box,
                                                                                   self.latest_drone_state,
