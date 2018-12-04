@@ -5,6 +5,7 @@ from person_detection.image_saver import ImageSaver
 from person_detection.tf_detector import TFDetector
 from state_estimation.new_state_estimator import NewStateEstimator
 from smooth_control.smooth_controller import SmoothController
+from utils.im2vid import im2vid
 from pyparrot.Minidrone import Mambo
 from pyparrot.DroneVision import DroneVision
 
@@ -82,3 +83,4 @@ mambo.safe_land(5)
 mambo.smart_sleep(5)
 print("disconnect")
 mambo.disconnect()
+im2vid.convert_frames_to_video()

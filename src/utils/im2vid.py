@@ -45,7 +45,7 @@ class im2vid:
             out.write(frame_array[i])
         out.release()
 
-im2vid.convert_frames_to_video()
+#im2vid.convert_frames_to_video()
  
 #def main():
     #convert_frames_to_video(pathIn, pathOut, fps)
