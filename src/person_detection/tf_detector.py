@@ -43,9 +43,13 @@ class TFDetector:
 
     # Given an image, returns the bounding box of the person in the image.
     # TODO: generalize to return a list of bounding boxes
-    def detect_bounding_box(self, image, visualize=False):
-        # Create a tf session.
-        self.detection_graph.as_default()
+    def detect_bounding_box(self, image, visualize=False, firstrun=False):
+
+        if firstrun: 
+            # Create a tf session.
+            self.detection_graph.as_default()
+            print(firstrun, "firstrun")
+
         with tf.Session(graph=self.detection_graph) as sess:
             # Get handles to input and output tensors
             ops = self.detection_graph.get_operations()
@@ -57,6 +61,7 @@ class TFDetector:
                     tensor_dict[key] = self.detection_graph.get_tensor_by_name(
                         tensor_name)
             image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
+
 
             output_dict = sess.run(tensor_dict, feed_dict={image_tensor: np.expand_dims(image, 0)})
             TFDetector.update_output_dict(output_dict)
@@ -100,7 +105,7 @@ class TFDetector:
                 cv2.putText(image, label_text, (label_left, label_bottom), cv2.FONT_HERSHEY_SIMPLEX, 1, label_text_color, 2,cv2.LINE_AA)
             
                 cv2.imshow("image", image)
-                # cv2.waitKey(0)
+                cv2.waitKey(0) 
             return [bb]  # FIXME: support lists, but right now it's only a list of length 1
 
 
