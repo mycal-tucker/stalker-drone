@@ -48,7 +48,7 @@ state_estimator = NewStateEstimator(mambo)
 smooth_controller = SmoothController(mambo,state_estimator)
 firstrun = True
 itercounter = 0
-max_num_iterations = 3
+max_num_iterations = 10
 done = False
 while not done:
     # try:
@@ -57,10 +57,10 @@ while not done:
     latest_image = image_saver.get_latest_image()  # FIXME: this is not returning the latest image.
 
     if firstrun: #super hacky way to not init the tf session everytime 
-    	bounding_boxes = tf_detector.detect_bounding_box(latest_image, visualize=True,firstrun=True)
+    	bounding_boxes = tf_detector.detect_bounding_box(latest_image,itercounter, visualize=True,firstrun=True)
     	firstrun = False
     else:
-    	bounding_boxes = tf_detector.detect_bounding_box(latest_image, visualize=True)
+    	bounding_boxes = tf_detector.detect_bounding_box(latest_image,itercounter, visualize=True)
 
     print(bounding_boxes)
     if bounding_boxes is not None:

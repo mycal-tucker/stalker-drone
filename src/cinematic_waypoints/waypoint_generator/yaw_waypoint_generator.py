@@ -8,7 +8,7 @@ class YawWaypointGenerator(WaypointGenerator):
         # This should correspond to the x value of a pixel right in the middle of a photo.
         self.target_centroid_x = target_centroid_x
         # Parameter for gain for how quickly the drone should yaw.
-        self.yaw_gain = 0.5
+        self.yaw_gain = 0.1
 
     # Exposed for testing.
     def get_target_centroid_x(self):
@@ -24,7 +24,7 @@ class YawWaypointGenerator(WaypointGenerator):
             return [drone_state]
         x_diff = bounding_box.get_centroid()[0] - self.target_centroid_x
 
-        yaw_control = -1 * self.yaw_gain * x_diff
+        yaw_control = self.yaw_gain * x_diff
 
         current_roll, current_pitch, current_yaw = drone_state.get_attitude()
 

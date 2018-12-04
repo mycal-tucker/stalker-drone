@@ -29,7 +29,7 @@ class SmoothController:
 
             move(self.mambo, dx=dx, dy=dy, dz=dz, dyaw=dyaw, duration=duration)
 
-            distance = np.sqrt(dx**2, dy**2, dz**2)
+            distance = np.sqrt(dx**2 + dy**2 + dz**2)
             if distance < self.thresh_dist and dyaw < self.thresh_yaw:
                 close = True
 

@@ -43,7 +43,7 @@ class TFDetector:
 
     # Given an image, returns the bounding box of the person in the image.
     # TODO: generalize to return a list of bounding boxes
-    def detect_bounding_box(self, image, visualize=False, firstrun=False):
+    def detect_bounding_box(self, image,iternum, visualize=False, firstrun=False):
 
         if firstrun: 
             # Create a tf session.
@@ -72,7 +72,9 @@ class TFDetector:
                 # Display the image and the overlayed bounding box
                 if bb is None:
                     print("No bounding box to visualize.")
-                    cv2.imshow("image", image)
+                    # cv2.imshow("image", image)
+                    cv2.imwrite("nobbimage" + str(iternum) + ".png", image)
+                    # cv2.waitKey(0)
                     return None
 
                 center_x, center_y = bb.centroid
@@ -103,9 +105,10 @@ class TFDetector:
 
                 # label text above the box
                 cv2.putText(image, label_text, (label_left, label_bottom), cv2.FONT_HERSHEY_SIMPLEX, 1, label_text_color, 2,cv2.LINE_AA)
-            
-                cv2.imshow("image", image)
-                cv2.waitKey(0) 
+
+                cv2.imwrite("bbimage" + str(iternum) + ".png", image)
+                # cv2.imshow("image", image)
+                # cv2.waitKey(0) 
             return [bb]  # FIXME: support lists, but right now it's only a list of length 1
 
 
