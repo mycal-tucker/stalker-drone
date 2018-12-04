@@ -52,7 +52,7 @@ def test_state_yaw_forward(mambo, dur):
 
 
 def test_state_forward(controller, dur):
-    cinematic_waypoints = [DroneState(y=-1)]
+    cinematic_waypoints = [DroneState(y=-1.5, z=-1)]
     controller.smooth_gen(cinematic_waypoints, dur)
     mambo.smart_sleep(dur)
 
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     print("connected: %s" % success)
 
     state_estimator = NewStateEstimator(mambo)
-    #dronestates = MamboStateOne(mamboAddr, use_wifi=True)
+    print("Initial state:", state_estimator.get_current_drone_state()[0])
 
 
     if (success):
@@ -113,6 +113,9 @@ if __name__ == "__main__":
 
             print("taking off!")
             mambo.safe_takeoff(5)
+
+            reference_value = state_estimator.has_taken_off()
+            print("Initial state:", reference_value)
 
 
             if mambo.sensors.flying_state != "emergency":

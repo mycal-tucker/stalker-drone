@@ -14,9 +14,9 @@ def interp(val, max_value):
 
 def move(mambo, dx, dy, dz, dyaw, duration):
 
-    thresh_pos = 0.2
+    thresh_pos = 0.3
     thresh_yaw = 5
-    dist_ref = 2
+    dist_ref = 6  # m
     yaw_ref = 400
 
     max_yaw = 90
