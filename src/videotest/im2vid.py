@@ -14,7 +14,7 @@ from os.path import isfile, join
 
 class im2vid:
     @staticmethod
-    def convert_frames_to_video(pathIn = './images/', pathOut= 'droneVideo.avi', fps= 30):
+    def convert_frames_to_video(pathIn = './images/', pathOut= 'droneVideo.avi', fps= 2):
         #pathIn is the path to the folder with saved images (default ./images)
         #pathOut is the path to the video you are creating (default droneVideo.avi)
         #fps is the frame rate of the video you are creating (default 30 frames/sec)
@@ -44,6 +44,8 @@ class im2vid:
             
         out.release()
  
+# im2vid.convert_frames_to_video()
+
 #def main():
     #convert_frames_to_video(pathIn, pathOut, fps)
  
