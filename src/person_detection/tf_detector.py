@@ -73,7 +73,7 @@ class TFDetector:
                 if bb is None:
                     print("No bounding box to visualize.")
                     # cv2.imshow("image", image)
-                    cv2.imwrite("nobbimage" + str(iternum) + ".png", image)
+                    cv2.imwrite("image" + str(iternum) + ".png", image)
                     # cv2.waitKey(0)
                     return None
 
@@ -106,7 +106,7 @@ class TFDetector:
                 # label text above the box
                 cv2.putText(image, label_text, (label_left, label_bottom), cv2.FONT_HERSHEY_SIMPLEX, 1, label_text_color, 2,cv2.LINE_AA)
 
-                cv2.imwrite("bbimage" + str(iternum) + ".png", image)
+                cv2.imwrite("image" + str(iternum) + ".png", image)
                 # cv2.imshow("image", image)
                 # cv2.waitKey(0) 
             return [bb]  # FIXME: support lists, but right now it's only a list of length 1
